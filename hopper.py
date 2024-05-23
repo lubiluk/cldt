@@ -5,6 +5,12 @@ import gymnasium as gym
 import numpy as np
 import torch
 
+from decision_transformer.evaluation.evaluate_episodes import evaluate_episode, evaluate_episode_rtg
+from decision_transformer.models.decision_transformer import DecisionTransformer
+from decision_transformer.models.mlp_bc import MLPBCModel
+from decision_transformer.training.act_trainer import ActTrainer
+from decision_transformer.training.seq_trainer import SequenceTrainer
+
 env_name = "hopper"
 dataset = "medium"
 K = 20
@@ -255,7 +261,7 @@ def experiment():
 
     model = model.to(device=device)
 
-    warmup_steps = warmup_steps
+    # warmup_steps = warmup_steps
     optimizer = torch.optim.AdamW(
         model.parameters(),
         lr=learning_rate,
@@ -278,3 +284,7 @@ def experiment():
         outputs = trainer.train_iteration(
             num_steps=num_steps_per_iter, iter_num=iter + 1, print_logs=True
         )
+
+
+if __name__ == "__main__":
+    experiment()
