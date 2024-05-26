@@ -9,6 +9,22 @@
             "type": "debugpy",
             "request": "launch",
             "module": "dataset.download"
+        },
+        {
+            "name": "Generate Dataset",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "dataset.generate",
+            "args": [
+                "-t",
+                "random",
+                "-e",
+                "Hopper-v4",
+                "-n",
+                "1000",
+                "-o",
+                "cache/dataset.pkl"
+            ]
         }
     ]
 }
