@@ -41,11 +41,18 @@ def generate_dataset(
     policy = load_policy(policy_type, policy_path, env)
 
     # Initialize the dataset
-    dataset = {"observations": [], "actions": [], "rewards": [], "terminals": [], "truncations": []}
+    dataset = {
+        "observations": [],
+        "next_observations": [],
+        "actions": [],
+        "rewards": [],
+        "terminals": [],
+        "truncations": [],
+    }
 
     # Generate the dataset
     for episode in range(num_episodes):
-        obs = env.reset()
+        obs, _ = env.reset()
         done = False
         while not done:
             if render:
@@ -53,6 +60,7 @@ def generate_dataset(
             action, _ = policy.act(obs, deterministic=True)
             next_obs, reward, ter, tru, _ = env.step(action)
             dataset["observations"].append(obs)
+            dataset["next_observations"].append(next_obs)
             dataset["actions"].append(action)
             dataset["rewards"].append(reward)
             dataset["terminals"].append(ter)
