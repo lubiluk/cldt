@@ -1,17 +1,18 @@
 """
 A program that generates a dataset by running a given trained model
-on a given environment, recording observations, actions, rewards and dones.
+on a given environment, recording observations, actions, rewards, terminals, and truncations.
 The dataset is saved in a .pkl file of a dictionary with keys 'observations',
-'actions', 'rewards', and 'dones'.
+'next_observations', 'actions', 'rewards', 'terminals', and 'truncations'.
 The program can be run from the command line with the following arguments:
---model_path: path to the trained model
---env_name: name of the environment
---num_episodes: number of episodes to run
---output_path: path to save the dataset
+-t/--policy-type: policy type (list of available policies in policies/__init__.py)
+-p/--policy-path: path to the trained model
+-e/--env: name of the environment
+-n/--num-episodes: number of episodes to run
+-o/--output-path: path to save the dataset
 --render: whether to render the environment while generating the dataset
 --seed: seed for the environment
 Example usage:
-python generate.py --model_path models/ppo --env_name Hopper-v4 --num_episodes 1000 --output_path dataset/hopper.pkl --render --seed 0
+python generate.py -t random -p cache/ppo -e hopper -n 1000 -o cache/hopper.pkl --render --seed 0
 """
 
 import argparse
@@ -21,6 +22,7 @@ import torch
 import pickle
 import numpy as np
 
+from dataset.envs import make_env
 from dataset.policies import load_policy
 
 
@@ -32,7 +34,7 @@ def generate_dataset(
     np.random.seed(seed)
 
     # Create the environment
-    env = gym.make(env_name)
+    env = make_env(env_name, seed, render)
 
     if hasattr(env, "seed") and seed is not None:
         env.seed(seed)
