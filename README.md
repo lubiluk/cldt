@@ -4,7 +4,7 @@ Continual learning with decision transformer
 ## Downloading all datasets from D4RL
 
 ```bash
-python -m dataset.download`
+python -m dataset.download
 ```
 
 ## Generating a dataset
