@@ -10,7 +10,7 @@ python -m dataset.download
 ## Generating a dataset
 
 1. Add your policy to `dataset/policies.py`.
-2. Add you environment to `dataset/envs`.
+2. Add you environment to `dataset/envs.py`.
 3. Run the generation module:
 
 ```bash
