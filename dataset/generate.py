@@ -34,10 +34,10 @@ def generate_dataset(
     np.random.seed(seed)
 
     # Create the environment
-    env = make_env(env_name, seed, render)
+    env = make_env(env_name, render)
 
-    if hasattr(env, "seed") and seed is not None:
-        env.seed(seed)
+    if hasattr(env.unwrapped, "seed") and seed is not None:
+        env.unwrapped.seed(seed)
 
     # Load the policy
     policy = load_policy(policy_type, policy_path, env)
@@ -112,7 +112,9 @@ if __name__ == "__main__":
         action="store_true",
         help="whether to render the environment while generating the dataset",
     )
-    parser.add_argument("--seed", type=int, default=0, help="seed for the environment")
+    parser.add_argument(
+        "--seed", type=int, default=1234, help="seed for the environment"
+    )
     args = parser.parse_args()
     generate_dataset(
         args.policy_type,

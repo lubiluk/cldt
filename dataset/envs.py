@@ -1,11 +1,12 @@
 import gymnasium as gym
 
 
-def make_env(env_name, seed=None, render=False) -> gym.Env:
+def make_env(env_name, render=False) -> gym.Env:
     if env_name == "hopper":
         env_name = "Hopper-v4"
 
-    env = gym.make(env_name)
-    if hasattr(env, "seed") and seed is not None:
-        env.seed(seed)
+    render_mode = "human" if render else None
+
+    env = gym.make(env_name, render_mode=render_mode)
+
     return env
