@@ -25,6 +25,30 @@
                 "-o",
                 "cache/dataset.pkl"
             ]
-        }
+        },
+        {
+            "name": "Experiment Atari",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "experiment.atari",
+            "args": [
+                "--seed",
+                "1234",
+                "--context-length",
+                "30",
+                "--epochs",
+                "5",
+                "--model-type",
+                "reward_conditioned",
+                "--num-steps",
+                "500000",
+                "--num-buffers",
+                "50",
+                "--game",
+                "Breakout",
+                "--batch-size",
+                "128"
+            ]
+        },
     ]
 }
