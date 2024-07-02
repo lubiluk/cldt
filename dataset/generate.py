@@ -43,17 +43,18 @@ def generate_dataset(
     policy = load_policy(policy_type, policy_path, env)
 
     # Initialize the dataset
-    dataset = {
-        "observations": [],
-        "next_observations": [],
-        "actions": [],
-        "rewards": [],
-        "terminals": [],
-        "truncations": [],
-    }
+    dataset = []
 
     # Generate the dataset
     for episode in range(num_episodes):
+        trajectory = {
+            "observations": [],
+            "next_observations": [],
+            "actions": [],
+            "rewards": [],
+            "terminals": [],
+            "truncations": [],
+        }
         obs, _ = env.reset()
         done = False
         while not done:
@@ -61,15 +62,15 @@ def generate_dataset(
                 env.render()
             action, _ = policy.act(obs, deterministic=True)
             next_obs, reward, ter, tru, _ = env.step(action)
-            dataset["observations"].append(obs)
-            dataset["next_observations"].append(next_obs)
-            dataset["actions"].append(action)
-            dataset["rewards"].append(reward)
-            dataset["terminals"].append(ter)
-            dataset["truncations"].append(tru)
+            trajectory["observations"].append(obs)
+            trajectory["next_observations"].append(next_obs)
+            trajectory["actions"].append(action)
+            trajectory["rewards"].append(reward)
+            trajectory["terminals"].append(ter)
+            trajectory["truncations"].append(tru)
             obs = next_obs
             done = ter or tru
-
+        dataset.append(trajectory)
     # Save the dataset
     with open(output_path, "wb") as f:
         pickle.dump(dataset, f)
@@ -79,12 +80,15 @@ def generate_dataset(
 
 
 if __name__ == "__main__":
+    # env = gym.make("Hopper-v4")
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-t",
         "--policy-type",
         type=str,
-        required=True,
+        default='random',
+        # required=True,
         help="policy type (list of available policies in policies/__init__.py)",
     )
     parser.add_argument(
@@ -95,17 +99,18 @@ if __name__ == "__main__":
         help="path to the trained model",
     )
     parser.add_argument(
-        "-e", "--env", type=str, required=True, help="name of the environment"
+        "-e", "--env", type=str, required=False, default='hopper', help="name of the environment"
     )
     parser.add_argument(
         "-n",
         "--num-episodes",
         type=int,
-        required=True,
+        required=False,
+        default=2000,
         help="number of episodes to run",
     )
     parser.add_argument(
-        "-o", "--output-path", type=str, required=True, help="path to save the dataset"
+        "-o", "--output-path", type=str, default='hopper.pkl', required=False, help="path to save the dataset"
     )
     parser.add_argument(
         "--render",

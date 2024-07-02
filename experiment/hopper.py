@@ -5,6 +5,7 @@ import gymnasium as gym
 import numpy as np
 import torch
 
+
 from decision_transformer.evaluation.evaluate_episodes import evaluate_episode, evaluate_episode_rtg
 from decision_transformer.models.decision_transformer import DecisionTransformer
 from decision_transformer.models.mlp_bc import MLPBCModel
@@ -29,6 +30,8 @@ weight_decay = 1e-4
 max_iters = 10
 num_steps_per_iter = 10_000
 
+
+# dataset = load_dataset("edbeeching/decision_transformer_gym_replay", "Hopper-v4")
 
 def discount_cumsum(x, gamma):
     """
