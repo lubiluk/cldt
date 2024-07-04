@@ -14,10 +14,10 @@ python -m dataset.download
 3. Run the generation module:
 
 ```bash
-python -m dataset.generate -t [name of your poliyc] -p [path to the trained policy (if applicable)] -e [name of your env] -n 1000 -o [output file path] --render --seed 0
+python generate_dateset.py -t [name of your policy] -p [path to the trained policy (if applicable)] -e [name of your env] -n 1000 -o [output file path] --render --seed 0
 
 Example:
-python -m dataset.generate -t random -p cache/random -e hopper -n 1000 -o cache/hopper.pkl --render --seed 0
+python -m generate_dateset.py -t random -p cache/random -e hopper -n 1000 -o cache/hopper.pkl --render --seed 0
 ```
 
 ## Downloading Atari datasets

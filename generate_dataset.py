@@ -18,10 +18,6 @@ python generate.py -t random -p cache/ppo -e hopper -n 1000 -o cache/hopper.pkl 
 import argparse
 import pickle
 
-import gymnasium as gym
-import numpy as np
-import torch
-
 from cldt.envs import setup_env
 from cldt.policies import setup_policy
 from cldt.utils import seed_everything
@@ -40,7 +36,7 @@ def generate_dataset(
         env.unwrapped.seed(seed)
 
     # Setup the policy that will generate episodes
-    policy = setup_policy(policy_type, policy_path, env)
+    policy = setup_policy(policy_type=policy_type, env=env, policy_path=policy_path)
 
     # Initialize the dataset, it's a list of trajectories
     # Each trajectory is a dictionary with keys 'observations',
