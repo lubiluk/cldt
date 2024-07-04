@@ -61,7 +61,7 @@ def experiment():
     state_dim = env.observation_space.shape[0]
     act_dim = env.action_space.shape[0]
 
-    dataset_path = f"data/{env_name}-{dataset}-v2.pkl"
+    dataset_path = f"cache/{env_name}-{dataset}-v2.pkl"
     with open(dataset_path, "rb") as f:
         trajectories = pickle.load(f)
 

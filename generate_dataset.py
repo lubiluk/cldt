@@ -16,22 +16,22 @@ python generate.py -t random -p cache/ppo -e hopper -n 1000 -o cache/hopper.pkl 
 """
 
 import argparse
-import importlib
-import gymnasium as gym
-import torch
 import pickle
+
+import gymnasium as gym
 import numpy as np
+import torch
 
 from cldt.envs import setup_env
 from cldt.policies import setup_policy
+from cldt.utils import seed_everything
 
 
 def generate_dataset(
     policy_type, policy_path, env_name, num_episodes, output_path, render, seed
 ):
     # Set the seed
-    torch.manual_seed(seed)
-    np.random.seed(seed)
+    seed_everything(seed)
 
     # Create the environment
     env = setup_env(env_name, render)
@@ -39,21 +39,27 @@ def generate_dataset(
     if hasattr(env.unwrapped, "seed") and seed is not None:
         env.unwrapped.seed(seed)
 
-    # Load the policy
+    # Setup the policy that will generate episodes
     policy = setup_policy(policy_type, policy_path, env)
 
-    # Initialize the dataset
+    # Initialize the dataset, it's a list of trajectories
+    # Each trajectory is a dictionary with keys 'observations',
+    # 'next_observations', 'actions', 'rewards', 'terminals', and 'truncations'
+    # Under each key is an numpy array of values for each timestep in the episode
     dataset = []
 
+    print(f"Generating dataset with {num_episodes} episodes...")
+
     # Generate the dataset
-    for episode in range(num_episodes):
+    for _ in range(num_episodes):
         trajectory = {
             "observations": [],
             "next_observations": [],
             "actions": [],
             "rewards": [],
-            "terminals": [],
+            "terminations": [],
             "truncations": [],
+            # "dones": []
         }
         obs, _ = env.reset()
         done = False
@@ -66,7 +72,7 @@ def generate_dataset(
             trajectory["next_observations"].append(next_obs)
             trajectory["actions"].append(action)
             trajectory["rewards"].append(reward)
-            trajectory["terminals"].append(ter)
+            trajectory["terminations"].append(ter)
             trajectory["truncations"].append(tru)
             obs = next_obs
             done = ter or tru
@@ -78,18 +84,18 @@ def generate_dataset(
     # Close the environment
     env.close()
 
+    print("Dataset saved to:", output_path)
+
 
 if __name__ == "__main__":
-    # env = gym.make("Hopper-v4")
-
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-t",
         "--policy-type",
         type=str,
-        default='random',
+        default="random",
         # required=True,
-        help="policy type (list of available policies in policies/__init__.py)",
+        help="policy type (list of available policies in cldt/policies.py)",
     )
     parser.add_argument(
         "-p",
@@ -99,7 +105,12 @@ if __name__ == "__main__":
         help="path to the trained model",
     )
     parser.add_argument(
-        "-e", "--env", type=str, required=False, default='hopper', help="name of the environment"
+        "-e",
+        "--env",
+        type=str,
+        required=False,
+        default="hopper",
+        help="name of the environment",
     )
     parser.add_argument(
         "-n",
@@ -110,7 +121,12 @@ if __name__ == "__main__":
         help="number of episodes to run",
     )
     parser.add_argument(
-        "-o", "--output-path", type=str, default='hopper.pkl', required=False, help="path to save the dataset"
+        "-o",
+        "--output-path",
+        type=str,
+        default="./cache/dataset.pkl",
+        required=False,
+        help="path to save the dataset",
     )
     parser.add_argument(
         "--render",

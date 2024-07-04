@@ -5,7 +5,7 @@ Functions for loading know policies
 from abc import ABC
 
 
-def load_policy(policy_type, policy_path, env):
+def setup_policy(policy_type, policy_path, env):
     if policy_type == "random":
         return RandomPolicy(env)
 
