@@ -20,14 +20,14 @@ import pickle
 
 from cldt.envs import setup_env
 from cldt.policies import setup_policy
-from cldt.utils import seed_everything
+from cldt.utils import seed_libraries
 
 
 def generate_dataset(
     policy_type, policy_path, env_name, num_episodes, output_path, render, seed
 ):
     # Set the seed
-    seed_everything(seed)
+    seed_libraries(seed)
 
     # Create the environment
     env = setup_env(env_name, render)

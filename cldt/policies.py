@@ -6,6 +6,7 @@ from abc import ABC
 
 
 def setup_policy(policy_type, env, policy_path=None):
+    # env can be a list of environments
     if policy_type == "random":
         return RandomPolicy(env)
 

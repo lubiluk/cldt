@@ -8,13 +8,13 @@
 
 import argparse
 import pickle
-from cldt.envs import name2env, setup_env
+from cldt.envs import setup_env
 from cldt.policies import setup_policy
-from cldt.utils import seed_everything
+from cldt.utils import seed_env, seed_libraries
 
 
-def train(
-    env_name: str,
+def train_single(
+    env_name,
     dataset_path,
     policy_type,
     policy_save_path,
@@ -23,13 +23,11 @@ def train(
     device="cpu",
 ):
     # Set the seed
-    seed_everything(seed)
-
+    seed_libraries(seed)
     # Create the environment
     env = setup_env(env_name, render)
-
-    if hasattr(env.unwrapped, "seed") and seed is not None:
-        env.unwrapped.seed(seed)
+    # Seed the environment
+    seed_env(env, seed)
 
     # Setup the policy that will generate episodes
     policy = setup_policy(policy_type=policy_type, env=env)
@@ -38,11 +36,23 @@ def train(
     with open(dataset_path, "rb") as f:
         dataset = pickle.load(f)
 
+    # Train the policy
     print(f"Training policy {policy_type} on {env_name} using {dataset_path}...")
     policy.train(dataset=dataset, config=config)  # ???
 
-    policy.save(path=policy_save_path)  # ???
-    print(f"Policy saved to {policy_save_path}")
+    print("Training done!")
+
+    # Evaluate the policy
+    print("Evaluating the policy...")
+    score = policy.evaluate(env=env, render=render)  # ???
+    print(f"Score: {score}")
+
+    # Save the policy
+    if policy_save_path is not None:
+        policy.save(path=policy_save_path)  # ???
+        print(f"Policy saved to {policy_save_path}")
+
+    return score
 
 
 if __name__ == "__main__":
@@ -89,7 +99,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    train(
+    train_single(
         args.env,
         args.dataset,
         args.policy_type,
