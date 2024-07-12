@@ -12,6 +12,11 @@ from cldt.envs import setup_env
 from cldt.policies import setup_policy
 from cldt.utils import seed_env, seed_libraries
 
+# This will be moved to a file
+train_config = {}
+
+model_config = {}
+
 
 def train_single(
     env_name,
@@ -29,8 +34,10 @@ def train_single(
     # Seed the environment
     seed_env(env, seed)
 
-    # Setup the policy that will generate episodes
-    policy = setup_policy(policy_type=policy_type, env=env)
+    # Setup the policy that we will train
+    policy = setup_policy(
+        policy_type=policy_type, env=env, device=device, config=model_config
+    )
 
     # Load the dataset
     with open(dataset_path, "rb") as f:
@@ -38,7 +45,7 @@ def train_single(
 
     # Train the policy
     print(f"Training policy {policy_type} on {env_name} using {dataset_path}...")
-    policy.train(dataset=dataset, config=config)  # ???
+    policy.train(dataset=dataset, config=train_config)  # ???
 
     print("Training done!")
 

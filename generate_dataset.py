@@ -20,7 +20,7 @@ import pickle
 
 from cldt.envs import setup_env
 from cldt.policies import setup_policy
-from cldt.utils import seed_libraries
+from cldt.utils import seed_env, seed_libraries
 
 
 def generate_dataset(
@@ -32,47 +32,21 @@ def generate_dataset(
     # Create the environment
     env = setup_env(env_name, render)
 
-    if hasattr(env.unwrapped, "seed") and seed is not None:
-        env.unwrapped.seed(seed)
+    seed_env(env, seed)
 
     # Setup the policy that will generate episodes
-    policy = setup_policy(policy_type=policy_type, env=env, policy_path=policy_path)
+    policy = setup_policy(policy_type=policy_type, env=env, load_path=policy_path)
 
     # Initialize the dataset, it's a list of trajectories
     # Each trajectory is a dictionary with keys 'observations',
     # 'next_observations', 'actions', 'rewards', 'terminals', and 'truncations'
     # Under each key is an numpy array of values for each timestep in the episode
-    dataset = []
 
     print(f"Generating dataset with {num_episodes} episodes...")
 
     # Generate the dataset
-    for _ in range(num_episodes):
-        trajectory = {
-            "observations": [],
-            "next_observations": [],
-            "actions": [],
-            "rewards": [],
-            "terminations": [],
-            "truncations": [],
-            # "dones": []
-        }
-        obs, _ = env.reset()
-        done = False
-        while not done:
-            if render:
-                env.render()
-            action, _ = policy.act(obs, deterministic=True)
-            next_obs, reward, ter, tru, _ = env.step(action)
-            trajectory["observations"].append(obs)
-            trajectory["next_observations"].append(next_obs)
-            trajectory["actions"].append(action)
-            trajectory["rewards"].append(reward)
-            trajectory["terminations"].append(ter)
-            trajectory["truncations"].append(tru)
-            obs = next_obs
-            done = ter or tru
-        dataset.append(trajectory)
+    dataset = policy.collect_experience(num_episodes)
+
     # Save the dataset
     with open(output_path, "wb") as f:
         pickle.dump(dataset, f)
@@ -113,7 +87,7 @@ if __name__ == "__main__":
         "--num-episodes",
         type=int,
         required=False,
-        default=2000,
+        default=100,
         help="number of episodes to run",
     )
     parser.add_argument(
