@@ -33,7 +33,8 @@ class DecisionTransformerGymDataCollator:
         # calculate dataset stats for normalization of states
         states = []
         traj_lens = []
-        for obs in dataset["observations"]:
+        for path in dataset:
+            obs = path["observations"]
             states.extend(obs)
             traj_lens.append(len(obs))
         self.n_traj = len(traj_lens)
@@ -85,7 +86,9 @@ class DecisionTransformerGymDataCollator:
                 np.array(feature["rewards"][si : si + self.max_len]).reshape(1, -1, 1)
             )
 
-            d.append(np.array(feature["dones"][si : si + self.max_len]).reshape(1, -1))
+            # d.append(
+            #     np.array(feature["dones"][si : si + self.max_len]).reshape(1, -1)
+            # )
             timesteps.append(np.arange(si, si + s[-1].shape[1]).reshape(1, -1))
             timesteps[-1][timesteps[-1] >= self.max_ep_len] = (
                 self.max_ep_len - 1
@@ -112,9 +115,9 @@ class DecisionTransformerGymDataCollator:
             r[-1] = np.concatenate(
                 [np.zeros((1, self.max_len - tlen, 1)), r[-1]], axis=1
             )
-            d[-1] = np.concatenate(
-                [np.ones((1, self.max_len - tlen)) * 2, d[-1]], axis=1
-            )
+            # d[-1] = np.concatenate(
+            #     [np.ones((1, self.max_len - tlen)) * 2, d[-1]], axis=1
+            # )
             rtg[-1] = (
                 np.concatenate([np.zeros((1, self.max_len - tlen, 1)), rtg[-1]], axis=1)
                 / self.scale
@@ -131,7 +134,7 @@ class DecisionTransformerGymDataCollator:
         s = torch.from_numpy(np.concatenate(s, axis=0)).float()
         a = torch.from_numpy(np.concatenate(a, axis=0)).float()
         r = torch.from_numpy(np.concatenate(r, axis=0)).float()
-        d = torch.from_numpy(np.concatenate(d, axis=0))
+        # d = torch.from_numpy(np.concatenate(d, axis=0))
         rtg = torch.from_numpy(np.concatenate(rtg, axis=0)).float()
         timesteps = torch.from_numpy(np.concatenate(timesteps, axis=0)).long()
         mask = torch.from_numpy(np.concatenate(mask, axis=0)).float()
@@ -172,13 +175,14 @@ class TrainableDT(DecisionTransformerModel):
 
 class DecisionTransformer(Policy):
     model = None
+    return_scale = 1000.0
 
     def __init__(self) -> None:
         super().__init__()
 
     def learn(self, dataset, num_epochs=20, batch_size=64, learning_rate=1e-4):
         if self.model is None:
-            collator = DecisionTransformerGymDataCollator(dataset["train"])
+            collator = DecisionTransformerGymDataCollator(dataset)
             config = DecisionTransformerConfig(
                 state_dim=collator.state_dim, act_dim=collator.act_dim
             )
@@ -199,7 +203,7 @@ class DecisionTransformer(Policy):
         trainer = Trainer(
             model=self.model,
             args=training_args,
-            train_dataset=dataset["train"],
+            train_dataset=dataset,
             data_collator=collator,
         )
 
@@ -252,9 +256,7 @@ class DecisionTransformer(Policy):
 
         return action_preds[0, -1]
 
-    def evaluate(
-        self, env, return_scale, target_return, num_episodes=1, max_ep_len=None, render=False
-    ):
+    def evaluate(self, env, goal_return, num_episodes=1, max_ep_len=1000, render=False):
         device = self.model.device
         state_mean = self.state_mean
         state_std = self.state_std
@@ -268,13 +270,20 @@ class DecisionTransformer(Policy):
         returns = []
         ep_lens = []
 
-        scale = return_scale
+        scale = self.return_scale
+        goal_return /= scale
 
-        for episode in range(num_episodes):
+        for _ in range(num_episodes):
             episode_return, episode_length = 0, 0
             state, _ = env.reset()
-            tret = torch.tensor(target_return, device=device, dtype=torch.float32).reshape(1, 1)
-            states = torch.from_numpy(state).reshape(1, state_dim).to(device=device, dtype=torch.float32)
+            target_return = torch.tensor(
+                goal_return, device=device, dtype=torch.float32
+            ).reshape(1, 1)
+            states = (
+                torch.from_numpy(state)
+                .reshape(1, state_dim)
+                .to(device=device, dtype=torch.float32)
+            )
             actions = torch.zeros((0, act_dim), device=device, dtype=torch.float32)
             rewards = torch.zeros(0, device=device, dtype=torch.float32)
 
@@ -284,14 +293,16 @@ class DecisionTransformer(Policy):
             timesteps = torch.tensor(0, device=device, dtype=torch.long).reshape(1, 1)
 
             for t in range(max_ep_len):
-                actions = torch.cat([actions, torch.zeros((1, act_dim), device=device)], dim=0)
+                actions = torch.cat(
+                    [actions, torch.zeros((1, act_dim), device=device)], dim=0
+                )
                 rewards = torch.cat([rewards, torch.zeros(1, device=device)])
 
                 action = self._get_action(
                     (states - state_mean) / state_std,
                     actions,
                     rewards,
-                    tret,
+                    target_return,
                     timesteps,
                 )
                 actions[-1] = action
@@ -300,13 +311,23 @@ class DecisionTransformer(Policy):
                 state, reward, ter, tru, _ = env.step(action)
                 done = ter or tru
 
-                cur_state = torch.from_numpy(state).to(device=device).reshape(1, state_dim)
+                cur_state = (
+                    torch.from_numpy(state).to(device=device).reshape(1, state_dim)
+                )
                 states = torch.cat([states, cur_state], dim=0)
                 rewards[-1] = reward
 
-                pred_return = tret[0, -1] - (reward / scale)
-                tret = torch.cat([tret, pred_return.reshape(1, 1)], dim=1)
-                timesteps = torch.cat([timesteps, torch.ones((1, 1), device=device, dtype=torch.long) * (t + 1)], dim=1)
+                pred_return = target_return[0, -1] - (reward / scale)
+                target_return = torch.cat(
+                    [target_return, pred_return.reshape(1, 1)], dim=1
+                )
+                timesteps = torch.cat(
+                    [
+                        timesteps,
+                        torch.ones((1, 1), device=device, dtype=torch.long) * (t + 1),
+                    ],
+                    dim=1,
+                )
 
                 episode_return += reward
                 episode_length += 1

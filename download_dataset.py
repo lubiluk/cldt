@@ -1,13 +1,14 @@
+import argparse
 import collections
 import os
 import pickle
-import h5py
 import urllib.request
 
+import h5py
 import numpy as np
 from tqdm import tqdm
-from .infos import DATASET_URLS
 
+from cldt.dataset_infos import DATASET_URLS
 
 CACHE_DIR = "cache"
 
@@ -130,15 +131,23 @@ def process_dataset(data_dict, name):
         pickle.dump(paths, f)
 
 
-def main():
-    for env_name in ['halfcheetah', 'hopper', 'walker2d']:
-        for dataset_type in ['medium', 'medium-replay', 'expert']:
-            name = f'{env_name}-{dataset_type}-v2'
-            dataset_url = DATASET_URLS[name]
-            data_dict = get_dataset(dataset_url)
-            process_dataset(data_dict, name)
-        
+def download_dataset(name):
+    if name not in DATASET_URLS:
+        raise ValueError(
+            f"Dataset {name} not found in DATASET_URLS (see dataset_infos.py)"
+        )
+
+    dataset_url = DATASET_URLS[name]
+    data_dict = get_dataset(dataset_url)
+    process_dataset(data_dict, name)
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "name",
+        type=str,
+        help="name of the dataset (see dataset_infos.py)",
+    )
+    args = parser.parse_args()
+    download_dataset(args.name)

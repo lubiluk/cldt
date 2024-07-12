@@ -5,10 +5,14 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Download Datasets",
+            "name": "Download Dataset",
             "type": "debugpy",
             "request": "launch",
-            "module": "dataset.download"
+            "program": "download_dataset.py",
+            "console": "integratedTerminal",
+            "args": [
+                "halfcheetah-expert-v2"
+            ]
         },
         {
             "name": "Generate Dataset",
@@ -26,6 +30,14 @@
                 "-o",
                 "cache/hopper.pkl"
             ]
+        },
+        {
+            "name": "Train Single",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "train_single.py",
+            "console": "integratedTerminal",
+            "args": []
         },
     ]
 }

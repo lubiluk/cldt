@@ -5,11 +5,13 @@ Functions for loading know policies
 from abc import ABC, abstractmethod
 
 
-
 def setup_policy(policy_type, load_path=None, **kwargs):
     # env can be a list of environments
     if policy_type == "random":
         policy = RandomPolicy()
+    elif policy_type == "dt":
+        from cldt.decision_transformer import DecisionTransformer
+        policy = DecisionTransformer(**kwargs)
     else:
         raise ValueError(f"Unknown policy type: {policy_type}")
 
@@ -46,7 +48,7 @@ class Policy(ABC):
                 "terminals": [],
                 "truncations": [],
             }
-            obs, _ = self.env.reset()
+            obs, _ = env.reset()
             done = False
             while not done:
                 action, _ = self.act(obs, deterministic=True)
@@ -64,6 +66,5 @@ class Policy(ABC):
 
 
 class RandomPolicy(Policy):
-    def 
     def act(self, obs, deterministic=False):
         return self.env.action_space.sample(), None

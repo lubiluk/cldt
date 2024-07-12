@@ -15,16 +15,13 @@ from cldt.utils import seed_env, seed_libraries
 # This will be moved to a file
 policy_kwargs = {}
 
-training_config = {}
+training_kwargs = {}
+
+eval_kwargs = {"goal_return": 1200}
 
 
 def train_single(
-    env_name,
-    dataset_path,
-    policy_type,
-    policy_save_path,
-    seed,
-    render=False
+    env_name, dataset_path, policy_type, policy_save_path, seed, render=False
 ):
     # Set the seed
     seed_libraries(seed)
@@ -34,9 +31,7 @@ def train_single(
     seed_env(env, seed)
 
     # Setup the policy that we will train
-    policy = setup_policy(
-        policy_type=policy_type, env=env,, 
-    )
+    policy = setup_policy(policy_type=policy_type, **policy_kwargs)
 
     # Load the dataset
     with open(dataset_path, "rb") as f:
@@ -44,18 +39,17 @@ def train_single(
 
     # Train the policy
     print(f"Training policy {policy_type} on {env_name} using {dataset_path}...")
-    policy.learn(dataset=dataset, config=train_config)  # ???
-
+    policy.learn(dataset=dataset, **training_kwargs)
     print("Training done!")
 
     # Evaluate the policy
     print("Evaluating the policy...")
-    score = policy.evaluate(env=env, render=render)  # ???
+    score = policy.evaluate(env=env, render=False, **eval_kwargs)
     print(f"Score: {score}")
 
     # Save the policy
     if policy_save_path is not None:
-        policy.save(path=policy_save_path)  # ???
+        policy.save(path=policy_save_path)
         print(f"Policy saved to {policy_save_path}")
 
     return score
@@ -68,7 +62,7 @@ if __name__ == "__main__":
         "--env",
         type=str,
         required=False,
-        default="hopper",
+        default="halfcheetah",
         help="name of the environment",
     )
     parser.add_argument(
@@ -76,21 +70,23 @@ if __name__ == "__main__":
         "--dataset",
         type=str,
         required=False,
-        default=None,
+        default="cache/halfcheetah-expert-v2.pkl",
         help="path to the dataset",
     )
     parser.add_argument(
         "-p",
         "--policy-type",
         type=str,
-        required=True,
+        required=False,
+        default="dt",
         help="policy type (list of available policies in cldt/policies.py)",
     )
     parser.add_argument(
         "-s",
         "--policy-save-path",
         type=str,
-        required=True,
+        required=False,
+        default="models/halfcheetah-dt",
         help="path to save the policy",
     )
     parser.add_argument(
@@ -101,7 +97,6 @@ if __name__ == "__main__":
         action="store_true",
         help="whether to render the environment while evaluating",
     )
-    parser.add_argument("--device", type=str, default="cpu", help="device to use")
 
     args = parser.parse_args()
 
@@ -112,5 +107,4 @@ if __name__ == "__main__":
         args.policy_save_path,
         args.seed,
         args.render,
-        args.device,
     )
