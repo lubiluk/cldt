@@ -1,5 +1,7 @@
 cache/
 .DS_Store
+notebooks/output/
+output/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

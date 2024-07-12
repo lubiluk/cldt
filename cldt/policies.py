@@ -5,10 +5,11 @@ Functions for loading know policies
 from abc import ABC, abstractmethod
 
 
-def setup_policy(policy_type, env, load_path=None, **kwargs):
+
+def setup_policy(policy_type, load_path=None, **kwargs):
     # env can be a list of environments
     if policy_type == "random":
-        policy = RandomPolicy(env, **kwargs)
+        policy = RandomPolicy()
     else:
         raise ValueError(f"Unknown policy type: {policy_type}")
 
@@ -18,20 +19,14 @@ def setup_policy(policy_type, env, load_path=None, **kwargs):
     return policy
 
 
-
-
 class Policy(ABC):
-    def __init__(self, env) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.env = env
 
-    def act(self, obs, deterministic=False):
+    def learn(self):
         raise NotImplementedError
 
-    def train(self):
-        raise NotImplementedError
-
-    def evaluate(self):
+    def evaluate(self, env, num_episodes=1, max_ep_len=None, record_trajectories=False):
         raise NotImplementedError
 
     def load(self, file):
@@ -68,8 +63,7 @@ class Policy(ABC):
         return dataset
 
 
-
 class RandomPolicy(Policy):
+    def 
     def act(self, obs, deterministic=False):
         return self.env.action_space.sample(), None
-

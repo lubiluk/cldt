@@ -13,9 +13,9 @@ from cldt.policies import setup_policy
 from cldt.utils import seed_env, seed_libraries
 
 # This will be moved to a file
-train_config = {}
+policy_kwargs = {}
 
-model_config = {}
+training_config = {}
 
 
 def train_single(
@@ -24,8 +24,7 @@ def train_single(
     policy_type,
     policy_save_path,
     seed,
-    render=False,
-    device="cpu",
+    render=False
 ):
     # Set the seed
     seed_libraries(seed)
@@ -36,7 +35,7 @@ def train_single(
 
     # Setup the policy that we will train
     policy = setup_policy(
-        policy_type=policy_type, env=env, device=device, config=model_config
+        policy_type=policy_type, env=env,, 
     )
 
     # Load the dataset
@@ -45,7 +44,7 @@ def train_single(
 
     # Train the policy
     print(f"Training policy {policy_type} on {env_name} using {dataset_path}...")
-    policy.train(dataset=dataset, config=train_config)  # ???
+    policy.learn(dataset=dataset, config=train_config)  # ???
 
     print("Training done!")
 
