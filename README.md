@@ -14,9 +14,15 @@ python download_dataset.py halfcheetah-expert-v2
 Environment should be a supported one, see envs.py.
 Policy should be a supported one, see policies.py
 
+You can either create a YAML config file or provide agruments directly. You can also provide a config file an overwrite it's values using arguments.
+
 ```bash
-usage: generate_dataset.py [-h] [-t POLICY_TYPE] [-p POLICY_PATH] [-e ENV] [-n NUM_EPISODES] [-o OUTPUT_PATH] [--render] [--seed SEED]
-example: python train_single.py -e halfcheetah -d cache/halfcheetah-expert-v2 -p dt -s trained/haflcheetah-dt --seed 1234
+Usage:
+usage: train_single.py [-h] [-e ENV] [-d DATASET] [-t POLICY_TYPE] [-s SAVE_PATH] [--seed SEED] [--render] [--policy-kwargs POLICY_KWARGS] [--training-kwargs TRAINING_KWARGS] [--eval-kwargs EVAL_KWARGS] [-c CONFIG]
+
+Example:
+python train_single.py -e halfcheetah -d cache/halfcheetah-expert-v2 -p dt -s trained/haflcheetah-dt --seed 1234
+python train_single.py -c configs/halfcheetah.yaml
 ```
 
 ## Generating a dataset
@@ -26,10 +32,11 @@ example: python train_single.py -e halfcheetah -d cache/halfcheetah-expert-v2 -p
 3. Run the generation module:
 
 ```bash
-python generate_dateset.py -t [name of your policy] -p [path to the trained policy (if applicable)] -e [name of your env] -n 1000 -o [output file path] --render --seed 0
+Usage: 
+generate_dataset.py [-h] [-t POLICY_TYPE] [-p POLICY_PATH] [-e ENV] [-n NUM_EPISODES] [-o OUTPUT_PATH] [--render] [--seed SEED]
 
 Example:
-python -m generate_dateset.py -t random -p cache/random -e hopper -n 1000 -o cache/hopper.pkl --render --seed 0
+python -m generate_dateset.py -t random -e hopper -n 1000 -o cache/hopper.pkl --render --seed 0
 ```
 
 

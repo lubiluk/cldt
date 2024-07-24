@@ -26,10 +26,13 @@ class DecisionTransformerGymDataCollator:
     p_sample: np.array = None  # a distribution to take account trajectory lengths
     n_traj: int = 0  # to store the number of trajectories in the dataset
 
-    def __init__(self, dataset) -> None:
+    def __init__(self, dataset, max_len, max_ep_len, scale) -> None:
         self.act_dim = len(dataset[0]["actions"][0])
         self.state_dim = len(dataset[0]["observations"][0])
         self.dataset = dataset
+        self.max_len = max_len
+        self.max_ep_len = max_ep_len
+        self.scale = scale
         # calculate dataset stats for normalization of states
         states = []
         traj_lens = []
@@ -176,15 +179,66 @@ class TrainableDT(DecisionTransformerModel):
 class DecisionTransformer(Policy):
     model = None
     return_scale = 1000.0
+    K = 20
+    max_ep_len = 1000
+    scale = 1000
+    hidden_size = 128
+    n_layer = 3
+    n_head = 1
+    activation_function = "relu"
+    dropout = 0.1
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        return_scale,
+        K,
+        max_ep_len,
+        scale,
+        hidden_size,
+        n_layer,
+        n_head,
+        activation_function,
+        dropout,
+    ) -> None:
         super().__init__()
+        self.return_scale = return_scale
+        self.K = K
+        self.max_ep_len = max_ep_len
+        self.scale = scale
+        self.hidden_size = hidden_size
+        self.n_layer = n_layer
+        self.n_head = n_head
+        self.activation_function = activation_function
+        self.dropout = dropout
 
-    def learn(self, dataset, num_epochs=20, batch_size=64, learning_rate=1e-4):
+    def learn(
+        self,
+        dataset,
+        num_epochs=20,
+        batch_size=64,
+        learning_rate=1e-4,
+        weight_decay=1e-4,
+        warmup_ratio=0.1,
+        optimizer="adamw_torch",
+        max_grad_norm=0.25,
+    ):
+        # TODO: support training a pretrained model
         if self.model is None:
-            collator = DecisionTransformerGymDataCollator(dataset)
+            collator = DecisionTransformerGymDataCollator(
+                dataset=dataset,
+                max_len=self.K,
+                max_ep_len=self.max_ep_len,
+                scale=self.scale,
+            )
             config = DecisionTransformerConfig(
-                state_dim=collator.state_dim, act_dim=collator.act_dim
+                state_dim=collator.state_dim,
+                act_dim=collator.act_dim,
+                hidden_size=self.hidden_size,
+                n_layer=self.n_layer,
+                n_head=self.n_head,
+                activation_function=self.activation_function,
+                resid_pdrop=self.dropout,
+                attn_pdrop=self.dropout,
             )
             self.model = TrainableDT(config)
 
@@ -194,10 +248,10 @@ class DecisionTransformer(Policy):
             num_train_epochs=num_epochs,
             per_device_train_batch_size=batch_size,
             learning_rate=learning_rate,
-            weight_decay=1e-4,
-            warmup_ratio=0.1,
-            optim="adamw_torch",
-            max_grad_norm=0.25,
+            weight_decay=weight_decay,
+            warmup_ratio=warmup_ratio,
+            optim=optimizer,
+            max_grad_norm=max_grad_norm,
         )
 
         trainer = Trainer(
@@ -339,8 +393,8 @@ class DecisionTransformer(Policy):
 
         return returns, ep_lens
 
-    def load(self, file):
-        self.model = TrainableDT.from_pretrained(file)
+    def load(self, path):
+        self.model = TrainableDT.from_pretrained(path)
 
-    def save(self, dir):
-        self.model.save_pretrained(dir)
+    def save(self, path):
+        self.model.save_pretrained(path)

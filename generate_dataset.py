@@ -24,7 +24,14 @@ from cldt.utils import seed_env, seed_libraries
 
 
 def generate_dataset(
-    policy_type, policy_path, env_name, num_episodes, output_path, render, seed
+    policy_type,
+    policy_path,
+    env_name,
+    num_episodes,
+    max_episode_len,
+    output_path,
+    render,
+    seed,
 ):
     # Set the seed
     seed_libraries(seed)
@@ -35,7 +42,7 @@ def generate_dataset(
     seed_env(env, seed)
 
     # Setup the policy that will generate episodes
-    policy = setup_policy(policy_type=policy_type, env=env, load_path=policy_path)
+    policy = setup_policy(policy_type=policy_type, load_path=policy_path)
 
     # Initialize the dataset, it's a list of trajectories
     # Each trajectory is a dictionary with keys 'observations',
@@ -45,7 +52,9 @@ def generate_dataset(
     print(f"Generating dataset with {num_episodes} episodes...")
 
     # Generate the dataset
-    dataset = policy.collect_experience(num_episodes)
+    dataset = policy.evaluate(
+        env, num_episodes=num_episodes, max_ep_len=max_episode_len, record_trajectories=True
+    )
 
     # Save the dataset
     with open(output_path, "wb") as f:
@@ -91,6 +100,14 @@ if __name__ == "__main__":
         help="number of episodes to run",
     )
     parser.add_argument(
+        "-l",
+        "--max-length",
+        type=int,
+        required=False,
+        default=1000,
+        help="max episode length",
+    )
+    parser.add_argument(
         "-o",
         "--output-path",
         type=str,
@@ -112,6 +129,7 @@ if __name__ == "__main__":
         args.policy_path,
         args.env,
         args.num_episodes,
+        args.max_length,
         args.output_path,
         args.render,
         args.seed,

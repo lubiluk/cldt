@@ -1,6 +1,7 @@
 import random
 import numpy as np
 import torch
+import yaml
 
 
 def seed_libraries(seed):
@@ -20,3 +21,16 @@ def seed_env(env, seed):
         else:
             if hasattr(env.unwrapped, "seed") and seed is not None:
                 env.unwrapped.seed(seed)
+
+
+def load_config(path):
+    with open(path, "r") as f:
+        config = yaml.safe_load(f)
+    return config
+
+
+def extend_config(base_config, extend_config):
+    for key, value in extend_config.items():
+        if value is not None:
+            base_config[key] = value
+    return base_config

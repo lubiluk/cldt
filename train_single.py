@@ -10,23 +10,28 @@ import argparse
 import pickle
 from cldt.envs import setup_env
 from cldt.policies import setup_policy
-from cldt.utils import seed_env, seed_libraries
-
-# This will be moved to a file
-policy_kwargs = {}
-
-training_kwargs = {}
-
-eval_kwargs = {"goal_return": 1200}
+from cldt.utils import extend_config, load_config, seed_env, seed_libraries
 
 
 def train_single(
-    env_name, dataset_path, policy_type, policy_save_path, seed, render=False
+    env,
+    dataset,
+    policy_type,
+    save_path,
+    seed,
+    render=False,
+    policy_kwargs={},
+    training_kwargs={},
+    eval_kwargs={},
 ):
+    # Save for printing
+    env_name = env
+    dataset_path = dataset
+
     # Set the seed
     seed_libraries(seed)
     # Create the environment
-    env = setup_env(env_name, render)
+    env = setup_env(env, render)
     # Seed the environment
     seed_env(env, seed)
 
@@ -34,7 +39,7 @@ def train_single(
     policy = setup_policy(policy_type=policy_type, **policy_kwargs)
 
     # Load the dataset
-    with open(dataset_path, "rb") as f:
+    with open(dataset, "rb") as f:
         dataset = pickle.load(f)
 
     # Train the policy
@@ -44,13 +49,13 @@ def train_single(
 
     # Evaluate the policy
     print("Evaluating the policy...")
-    score = policy.evaluate(env=env, render=False, **eval_kwargs)
+    score = policy.evaluate(env=env, render=render, **eval_kwargs)
     print(f"Score: {score}")
 
     # Save the policy
-    if policy_save_path is not None:
-        policy.save(path=policy_save_path)
-        print(f"Policy saved to {policy_save_path}")
+    if save_path is not None:
+        policy.save(path=save_path)
+        print(f"Policy saved to {save_path}")
 
     return score
 
@@ -74,7 +79,7 @@ if __name__ == "__main__":
         help="path to the dataset",
     )
     parser.add_argument(
-        "-p",
+        "-t",
         "--policy-type",
         type=str,
         required=False,
@@ -83,10 +88,10 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-s",
-        "--policy-save-path",
+        "--save-path",
         type=str,
         required=False,
-        default="models/halfcheetah-dt",
+        default="results/halfcheetah-dt",
         help="path to save the policy",
     )
     parser.add_argument(
@@ -97,14 +102,48 @@ if __name__ == "__main__":
         action="store_true",
         help="whether to render the environment while evaluating",
     )
+    parser.add_argument(
+        "--policy-kwargs",
+        type=str,
+        required=False,
+        default="{}",
+        help="kwargs for the policy",
+    )
+    parser.add_argument(
+        "--training-kwargs",
+        type=str,
+        required=False,
+        default="{}",
+        help="kwargs for the training",
+    )
+    parser.add_argument(
+        "--eval-kwargs",
+        type=str,
+        required=False,
+        default="{}",
+        help="kwargs for the evaluation",
+    )
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=str,
+        required=False,
+        default="configs/halfcheetah.yaml",
+        help="path to the config file",
+    )
 
     args = parser.parse_args()
 
-    train_single(
-        args.env,
-        args.dataset,
-        args.policy_type,
-        args.policy_save_path,
-        args.seed,
-        args.render,
-    )
+    config = vars(args)
+
+    # Load the config
+    if args.config is not None:
+        base_config = load_config(args.config)
+        config = extend_config(base_config, config)
+
+    del config["config"]
+
+    print("Config:")
+    print(config)
+
+    train_single(**config)
