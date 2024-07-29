@@ -106,21 +106,21 @@ if __name__ == "__main__":
         "--policy-kwargs",
         type=str,
         required=False,
-        default="{}",
+        default=None,
         help="kwargs for the policy",
     )
     parser.add_argument(
         "--training-kwargs",
         type=str,
         required=False,
-        default="{}",
+        default=None,
         help="kwargs for the training",
     )
     parser.add_argument(
         "--eval-kwargs",
         type=str,
         required=False,
-        default="{}",
+        default=None,
         help="kwargs for the evaluation",
     )
     parser.add_argument(
@@ -135,6 +135,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     config = vars(args)
+
+    # Deserialize the kwargs
+    if config["policy_kwargs"] is not None:
+        config["policy_kwargs"] = eval(config["policy_kwargs"])
+    if config["training_kwargs"] is not None:
+        config["training_kwargs"] = eval(config["training_kwargs"])
+    if config["eval_kwargs"] is not None:
+        config["eval_kwargs"] = eval(config["eval_kwargs"])
 
     # Load the config
     if args.config is not None:
