@@ -127,6 +127,11 @@ def process_dataset(data_dict, name):
 
     filename = f"{name}.pkl"
     filepath = os.path.join(CACHE_DIR, filename)
+
+    # create cache directory if it doesn't exist
+    if not os.path.exists(CACHE_DIR):
+        os.makedirs(CACHE_DIR)
+        
     with open(filepath, "wb") as f:
         pickle.dump(paths, f)
 
