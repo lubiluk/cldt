@@ -128,10 +128,6 @@ def process_dataset(data_dict, name):
     filename = f"{name}.pkl"
     filepath = os.path.join(CACHE_DIR, filename)
 
-    # create cache directory if it doesn't exist
-    if not os.path.exists(CACHE_DIR):
-        os.makedirs(CACHE_DIR)
-        
     with open(filepath, "wb") as f:
         pickle.dump(paths, f)
 
@@ -141,6 +137,10 @@ def download_dataset(name):
         raise ValueError(
             f"Dataset {name} not found in DATASET_URLS (see dataset_infos.py)"
         )
+    
+     # create cache directory if it doesn't exist
+    if not os.path.exists(CACHE_DIR):
+        os.makedirs(CACHE_DIR)
 
     dataset_url = DATASET_URLS[name]
     data_dict = get_dataset(dataset_url)
