@@ -4,6 +4,7 @@ policy_type: dt
 save_path: results/halfcheetah-dt
 seed: 1234
 render: False
+
 policy_kwargs:
   return_scale: 1000.0
   K: 20
@@ -15,14 +16,15 @@ policy_kwargs:
   activation_function: relu
   dropout: 0.1
 
-
 training_kwargs:
-  num_epochs: 20
+  num_epochs: 120
   batch_size: 64
   learning_rate: 0.0001
   weight_decay: 0.0001
   warmup_ratio: 0.1
   optimizer: adamw_torch
   max_grad_norm: 0.25
+
 eval_kwargs:
-  goal_return: 1200
+  goal_return: 6000
+  num_episodes: 10

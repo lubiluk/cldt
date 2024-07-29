@@ -34,3 +34,21 @@ def extend_config(base_config, extend_config):
         if value is not None:
             base_config[key] = value
     return base_config
+
+
+def config_from_args(args):
+    config = vars(args)
+
+    # Deserialize the kwargs
+    for k in ["policy_kwargs", "training_kwargs", "eval_kwargs"]:
+        if k in config and config[k] is not None:
+            config[k] = eval(config[k])
+
+    # Load the config
+    if args.config is not None:
+        base_config = load_config(args.config)
+        config = extend_config(base_config, config)
+
+    del config["config"]
+
+    return config

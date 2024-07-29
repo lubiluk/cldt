@@ -37,7 +37,21 @@
             "request": "launch",
             "program": "train_single.py",
             "console": "integratedTerminal",
-            "args": []
+            "args": [
+                "-c", "configs/halfcheetah.yaml",
+            ]
+        },
+        ,
+        {
+            "name": "Evaluate Single",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "evaluate_single.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-c", "configs/halfcheetah.yaml",
+                "--render"
+            ]
         },
     ]
 }

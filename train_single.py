@@ -10,7 +10,13 @@ import argparse
 import pickle
 from cldt.envs import setup_env
 from cldt.policies import setup_policy
-from cldt.utils import extend_config, load_config, seed_env, seed_libraries
+from cldt.utils import (
+    config_from_args,
+    extend_config,
+    load_config,
+    seed_env,
+    seed_libraries,
+)
 
 
 def train_single(
@@ -134,22 +140,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    config = vars(args)
-
-    # Deserialize the kwargs
-    if config["policy_kwargs"] is not None:
-        config["policy_kwargs"] = eval(config["policy_kwargs"])
-    if config["training_kwargs"] is not None:
-        config["training_kwargs"] = eval(config["training_kwargs"])
-    if config["eval_kwargs"] is not None:
-        config["eval_kwargs"] = eval(config["eval_kwargs"])
-
-    # Load the config
-    if args.config is not None:
-        base_config = load_config(args.config)
-        config = extend_config(base_config, config)
-
-    del config["config"]
+    config = config_from_args(args)
 
     print("Config:")
     print(config)
