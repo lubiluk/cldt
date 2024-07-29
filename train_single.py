@@ -67,7 +67,7 @@ if __name__ == "__main__":
         "--env",
         type=str,
         required=False,
-        default="halfcheetah",
+        default=None,
         help="name of the environment",
     )
     parser.add_argument(
@@ -75,7 +75,7 @@ if __name__ == "__main__":
         "--dataset",
         type=str,
         required=False,
-        default="cache/halfcheetah-expert-v2.pkl",
+        default=None,
         help="path to the dataset",
     )
     parser.add_argument(
@@ -83,7 +83,7 @@ if __name__ == "__main__":
         "--policy-type",
         type=str,
         required=False,
-        default="dt",
+        default=None,
         help="policy type (list of available policies in cldt/policies.py)",
     )
     parser.add_argument(
@@ -91,11 +91,11 @@ if __name__ == "__main__":
         "--save-path",
         type=str,
         required=False,
-        default="results/halfcheetah-dt",
+        default=None,
         help="path to save the policy",
     )
     parser.add_argument(
-        "--seed", type=int, default=1234, help="seed for the environment"
+        "--seed", type=int, default=None, help="seed for the environment"
     )
     parser.add_argument(
         "--render",
