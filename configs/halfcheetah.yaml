@@ -1,5 +1,5 @@
 env: halfcheetah
-dataset: cache/halfcheetah-expert-v2.pkl
+dataset: cache/halfcheetah-medium-v2.pkl
 policy_type: dt
 save_path: results/halfcheetah-dt
 seed: 1234
