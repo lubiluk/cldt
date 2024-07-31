@@ -52,3 +52,4 @@ def config_from_args(args):
     del config["config"]
 
     return config
+

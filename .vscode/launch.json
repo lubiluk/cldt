@@ -22,13 +22,13 @@
             "console": "integratedTerminal",
             "args": [
                 "-t",
-                "random",
+                "reach",
                 "-e",
-                "hopper",
+                "panda-reach-dense",
                 "-n",
                 "1000",
                 "-o",
-                "cache/hopper.pkl"
+                "datasets/panda-reach-dense.pkl"
             ]
         },
         {
@@ -38,7 +38,7 @@
             "program": "train_single.py",
             "console": "integratedTerminal",
             "args": [
-                "-c", "configs/halfcheetah.yaml",
+                "-c", "configs/panda-reach-dense.yaml",
             ]
         },
         ,

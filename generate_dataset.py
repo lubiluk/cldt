@@ -21,6 +21,7 @@ import pickle
 from cldt.envs import setup_env
 from cldt.policies import setup_policy
 from cldt.utils import seed_env, seed_libraries
+from cldt.wrappers import TrajectoryRecorder
 
 
 def generate_dataset(
@@ -46,19 +47,22 @@ def generate_dataset(
 
     # Initialize the dataset, it's a list of trajectories
     # Each trajectory is a dictionary with keys 'observations',
-    # 'next_observations', 'actions', 'rewards', 'terminals', and 'truncations'
+    # 'actions', 'rewards', 'next_observations', 'terminals'
     # Under each key is an numpy array of values for each timestep in the episode
 
     print(f"Generating dataset with {num_episodes} episodes...")
 
     # Generate the dataset
-    dataset = policy.evaluate(
-        env, num_episodes=num_episodes, max_ep_len=max_episode_len, record_trajectories=True
+    env = TrajectoryRecorder(env)
+    _ = policy.evaluate(
+        env, num_episodes=num_episodes, max_ep_len=max_episode_len
     )
+
+    trajectories = env.numpy_trajectories()
 
     # Save the dataset
     with open(output_path, "wb") as f:
-        pickle.dump(dataset, f)
+        pickle.dump(trajectories, f)
 
     # Close the environment
     env.close()

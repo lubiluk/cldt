@@ -5,16 +5,20 @@ Functions for loading know policies
 from abc import ABC, abstractmethod
 
 
-def setup_policy(policy_type, load_path=None, **kwargs):
+def setup_policy(policy_type, load_path=None, extractor=None, **kwargs):
     # env can be a list of environments
     if policy_type == "random":
-        from cldt.random_policy import RandomPolicy
+        from cldt.policy_types.random_policy import RandomPolicy
 
         policy = RandomPolicy()
     elif policy_type == "dt":
-        from cldt.decision_transformer import DecisionTransformer
+        from cldt.policy_types.decision_transformer import DecisionTransformer
 
-        policy = DecisionTransformer(**kwargs)
+        policy = DecisionTransformer(extractor=extractor, **kwargs)
+    elif policy_type == "reach":
+        from cldt.policy_types.reach_policy import ReachPolicy
+
+        policy = ReachPolicy()
     else:
         raise ValueError(f"Unknown policy type: {policy_type}")
 
@@ -25,17 +29,18 @@ def setup_policy(policy_type, load_path=None, **kwargs):
 
 
 class Policy(ABC):
-    def __init__(self) -> None:
+    def __init__(self, extractor=None) -> None:
         super().__init__()
+        self.extractor = extractor
 
-    def learn(self):
-        raise NotImplementedError
+    def learn(self, dataset=None, env=None):
+        pass
 
-    def evaluate(self, env, num_episodes=1, max_ep_len=None, record_trajectories=False):
+    def evaluate(self, env, num_episodes=1, max_ep_len=None, render=False):
         raise NotImplementedError
 
     def load(self, path):
         raise NotImplementedError
 
     def save(self, path):
-        raise NotImplementedError
+        pass

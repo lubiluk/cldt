@@ -12,6 +12,8 @@ from transformers import (
     TrainingArguments,
 )
 
+# {'ep_len': 50, 'ep_ret': -30.679904557496595, 'trajectories': [(...), (...), (...), (...), (...), (...), (...), (...), (...), (...), (...), (...), (...), (...), (...), (...), (...), (...), (...), ...]}
+
 
 @dataclass
 class DecisionTransformerGymDataCollator:
@@ -26,18 +28,28 @@ class DecisionTransformerGymDataCollator:
     p_sample: np.array = None  # a distribution to take account trajectory lengths
     n_traj: int = 0  # to store the number of trajectories in the dataset
 
-    def __init__(self, dataset, max_len, max_ep_len, scale) -> None:
+    def __init__(self, dataset, max_len, max_ep_len, scale, extractor=None) -> None:
         self.act_dim = len(dataset[0]["actions"][0])
-        self.state_dim = len(dataset[0]["observations"][0])
+        self.state_dim = (
+            extractor.n_features
+            if extractor is not None
+            else len(dataset[0]["observations"][0])
+        )
         self.dataset = dataset
         self.max_len = max_len
         self.max_ep_len = max_ep_len
         self.scale = scale
+        self.extractor = extractor
+
         # calculate dataset stats for normalization of states
         states = []
         traj_lens = []
         for path in dataset:
-            obs = path["observations"]
+            obs = (
+                self.extractor(path["observations"])
+                if self.extractor is not None
+                else path["observations"]
+            )
             states.extend(obs)
             traj_lens.append(len(obs))
         self.n_traj = len(traj_lens)
@@ -74,11 +86,16 @@ class DecisionTransformerGymDataCollator:
             feature = self.dataset[int(ind)]
             si = random.randint(0, len(feature["rewards"]) - 1)
 
+            # extract observations
+            obs = (
+                self.extractor(feature["observations"])
+                if self.extractor is not None
+                else feature["observations"]
+            )
+
             # get sequences from dataset
             s.append(
-                np.array(feature["observations"][si : si + self.max_len]).reshape(
-                    1, -1, self.state_dim
-                )
+                np.array(obs[si : si + self.max_len]).reshape(1, -1, self.state_dim)
             )
             a.append(
                 np.array(feature["actions"][si : si + self.max_len]).reshape(
@@ -153,8 +170,9 @@ class DecisionTransformerGymDataCollator:
 
 
 class TrainableDT(DecisionTransformerModel):
-    def __init__(self, config):
+    def __init__(self, config, extractor):
         super().__init__(config)
+        self.extractor = extractor
 
     def forward(self, **kwargs):
         output = super().forward(**kwargs)
@@ -199,6 +217,7 @@ class DecisionTransformer(Policy):
         n_head,
         activation_function,
         dropout,
+        extractor=None,
     ) -> None:
         super().__init__()
         self.return_scale = return_scale
@@ -210,6 +229,7 @@ class DecisionTransformer(Policy):
         self.n_head = n_head
         self.activation_function = activation_function
         self.dropout = dropout
+        self.extractor = extractor
 
     def learn(
         self,
@@ -229,6 +249,7 @@ class DecisionTransformer(Policy):
                 max_len=self.K,
                 max_ep_len=self.max_ep_len,
                 scale=self.scale,
+                extractor=self.extractor,
             )
             config = DecisionTransformerConfig(
                 state_dim=collator.state_dim,
@@ -240,7 +261,7 @@ class DecisionTransformer(Policy):
                 resid_pdrop=self.dropout,
                 attn_pdrop=self.dropout,
             )
-            self.model = TrainableDT(config)
+            self.model = TrainableDT(config, self.extractor)
 
         training_args = TrainingArguments(
             output_dir="output/",
@@ -315,7 +336,11 @@ class DecisionTransformer(Policy):
         state_mean = self.state_mean
         state_std = self.state_std
 
-        state_dim = env.observation_space.shape[0]
+        state_dim = (
+            env.observation_space.shape[0]
+            if self.extractor is None
+            else self.extractor.n_features
+        )
         act_dim = env.action_space.shape[0]
 
         state_mean = torch.from_numpy(state_mean).to(device=device)
@@ -330,14 +355,16 @@ class DecisionTransformer(Policy):
         for _ in range(num_episodes):
             episode_return, episode_length = 0, 0
             state, _ = env.reset()
+
+            if self.extractor is not None:
+                state = self.extractor(state)
+            else:
+                state = torch.from_numpy(state)
+
             target_return = torch.tensor(
                 goal_return, device=device, dtype=torch.float32
             ).reshape(1, 1)
-            states = (
-                torch.from_numpy(state)
-                .reshape(1, state_dim)
-                .to(device=device, dtype=torch.float32)
-            )
+            states = state.reshape(1, state_dim).to(device=device, dtype=torch.float32)
             actions = torch.zeros((0, act_dim), device=device, dtype=torch.float32)
             rewards = torch.zeros(0, device=device, dtype=torch.float32)
 
@@ -362,11 +389,15 @@ class DecisionTransformer(Policy):
                 actions[-1] = action
                 action = action.detach().cpu().numpy()
 
-                state, reward, ter, tru, _ = env.step(action)
-                done = ter or tru
+                state, reward, done, _ = env.step(action)
+
+                if self.extractor is not None:
+                    state = self.extractor(state)
+                else:
+                    state = torch.from_numpy(state)
 
                 cur_state = (
-                    torch.from_numpy(state).to(device=device).reshape(1, state_dim)
+                    state.to(device=device).reshape(1, state_dim)
                 )
                 states = torch.cat([states, cur_state], dim=0)
                 rewards[-1] = reward

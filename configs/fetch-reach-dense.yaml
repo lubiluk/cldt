@@ -1,0 +1,32 @@
+env: fetch-reach-dense
+dataset: datasets/fetch-reach-dense.pkl
+save_path: results/fetch-reach-dense-dt
+seed: 1234
+render: False
+
+policy_type: dt
+policy_kwargs:
+  return_scale: 100.0
+  K: 20
+  max_ep_len: 100
+  scale: 100
+  hidden_size: 128
+  n_layer: 3
+  n_head: 1
+  activation_function: relu
+  dropout: 0.1
+
+extractor_type: dict
+
+training_kwargs:
+  num_epochs: 120
+  batch_size: 64
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  warmup_ratio: 0.1
+  optimizer: adamw_torch
+  max_grad_norm: 0.25
+
+eval_kwargs:
+  goal_return: 0
+  num_episodes: 10

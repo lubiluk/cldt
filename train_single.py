@@ -9,6 +9,7 @@
 import argparse
 import pickle
 from cldt.envs import setup_env
+from cldt.extractors import setup_extractor
 from cldt.policies import setup_policy
 from cldt.utils import (
     config_from_args,
@@ -29,6 +30,8 @@ def train_single(
     policy_kwargs={},
     training_kwargs={},
     eval_kwargs={},
+    extractor_type=None,
+    extractor_kwargs={},
 ):
     # Save for printing
     env_name = env
@@ -41,8 +44,13 @@ def train_single(
     # Seed the environment
     seed_env(env, seed)
 
+    # Setup the extractor for the policy
+    extractor = setup_extractor(
+        extractor_type, observation_space=env.observation_space, **extractor_kwargs
+    )
+
     # Setup the policy that we will train
-    policy = setup_policy(policy_type=policy_type, **policy_kwargs)
+    policy = setup_policy(policy_type=policy_type, extractor=extractor, **policy_kwargs)
 
     # Load the dataset
     with open(dataset, "rb") as f:

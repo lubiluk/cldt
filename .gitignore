@@ -3,6 +3,7 @@ cache/
 notebooks/output/
 output/
 results/
+datasets/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

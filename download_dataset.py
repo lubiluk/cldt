@@ -10,22 +10,17 @@ from tqdm import tqdm
 
 from cldt.dataset_infos import DATASET_URLS
 
-CACHE_DIR = "cache"
 
-
-def filepath_from_url(dataset_url):
+def download_dataset_from_url(dataset_url, output_dir):
     _, dataset_name = os.path.split(dataset_url)
-    dataset_filepath = os.path.join(CACHE_DIR, dataset_name)
-    return dataset_filepath
+    dataset_filepath = os.path.join(output_dir, dataset_name)
 
-
-def download_dataset_from_url(dataset_url):
-    dataset_filepath = filepath_from_url(dataset_url)
     if not os.path.exists(dataset_filepath):
         print("Downloading dataset:", dataset_url, "to", dataset_filepath)
         urllib.request.urlretrieve(dataset_url, dataset_filepath)
     if not os.path.exists(dataset_filepath):
         raise IOError("Failed to download dataset from %s" % dataset_url)
+
     return dataset_filepath
 
 
@@ -40,8 +35,12 @@ def get_keys(h5file):
     return keys
 
 
-def get_dataset(dataset_url=None, env=None):
-    h5path = download_dataset_from_url(dataset_url)
+def get_dataset(
+    dataset_url,
+    output_dir,
+    env=None,
+):
+    h5path = download_dataset_from_url(dataset_url, output_dir)
 
     data_dict = {}
     with h5py.File(h5path, "r") as dataset_file:
@@ -84,7 +83,7 @@ def get_dataset(dataset_url=None, env=None):
     return data_dict
 
 
-def process_dataset(data_dict, name):
+def process_dataset(data_dict, name, output_dir):
     dataset = data_dict
     N = dataset["rewards"].shape[0]
     data_ = collections.defaultdict(list)
@@ -126,25 +125,25 @@ def process_dataset(data_dict, name):
     )
 
     filename = f"{name}.pkl"
-    filepath = os.path.join(CACHE_DIR, filename)
+    filepath = os.path.join(output_dir, filename)
 
     with open(filepath, "wb") as f:
         pickle.dump(paths, f)
 
 
-def download_dataset(name):
+def download_dataset(name, output_dir):
     if name not in DATASET_URLS:
         raise ValueError(
             f"Dataset {name} not found in DATASET_URLS (see dataset_infos.py)"
         )
-    
-     # create cache directory if it doesn't exist
-    if not os.path.exists(CACHE_DIR):
-        os.makedirs(CACHE_DIR)
+
+    # create output_dir if it doesn't exist
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
     dataset_url = DATASET_URLS[name]
-    data_dict = get_dataset(dataset_url)
-    process_dataset(data_dict, name)
+    data_dict = get_dataset(dataset_url, output_dir=output_dir)
+    process_dataset(data_dict, name=name, output_dir=output_dir)
 
 
 if __name__ == "__main__":
@@ -154,5 +153,14 @@ if __name__ == "__main__":
         type=str,
         help="name of the dataset (see dataset_infos.py)",
     )
+    parser.add_argument(
+        "-o",
+        "--output-dir",
+        type=str,
+        required=False,
+        default="datasets",
+        help="directory to save the dataset",
+    )
+
     args = parser.parse_args()
-    download_dataset(args.name)
+    download_dataset(args.name, args.output_dir)
