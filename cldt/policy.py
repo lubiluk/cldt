@@ -28,11 +28,11 @@ def type_2_class(policy_type):
 
 def load_policy(policy_type, load_path, env=None):
     policy_class = type_2_class(policy_type)
-    
+
     if env is not None:
         # Some policies from SB3 need env...
         return policy_class.load(load_path, env)
-    
+
     return policy_class.load(load_path)
 
 
@@ -42,9 +42,8 @@ def setup_policy(policy_type, **kwargs):
 
 
 class Policy(ABC):
-    def __init__(self, extractor=None) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.extractor = extractor
 
     def learn_offline(self, dataset, observation_space, action_space):
         raise NotImplementedError

@@ -1,8 +1,11 @@
 from dataclasses import dataclass
+from pathlib import Path
+import pickle
 import random
 
 import numpy as np
 import torch
+import yaml
 from cldt.extractors import DictExtractor
 from cldt.policy import Policy
 
@@ -169,9 +172,8 @@ class DecisionTransformerGymDataCollator:
 
 
 class TrainableDT(DecisionTransformerModel):
-    def __init__(self, config, extractor):
+    def __init__(self, config):
         super().__init__(config)
-        self.extractor = extractor
 
     def forward(self, **kwargs):
         output = super().forward(**kwargs)
@@ -204,6 +206,7 @@ class DecisionTransformerPolicy(Policy):
     n_head = 1
     activation_function = "relu"
     dropout = 0.1
+    extractor = None
 
     def __init__(
         self,
@@ -216,7 +219,7 @@ class DecisionTransformerPolicy(Policy):
         n_head,
         activation_function,
         dropout,
-        extractor=None,
+        extractor_type=None,
     ) -> None:
         super().__init__()
         self.return_scale = return_scale
@@ -228,7 +231,7 @@ class DecisionTransformerPolicy(Policy):
         self.n_head = n_head
         self.activation_function = activation_function
         self.dropout = dropout
-        self.extractor = extractor
+        self.extractor_type = extractor_type
 
     def learn_offline(
         self,
@@ -245,8 +248,10 @@ class DecisionTransformerPolicy(Policy):
     ):
         # TODO: support training a pretrained model
         if self.model is None:
-            if self.extractor == "dict":
+            if self.extractor_type == "dict":
                 self.extractor = DictExtractor(observation_space)
+            else:
+                self.extractor = None
 
             collator = DecisionTransformerGymDataCollator(
                 dataset=dataset,
@@ -265,7 +270,7 @@ class DecisionTransformerPolicy(Policy):
                 resid_pdrop=self.dropout,
                 attn_pdrop=self.dropout,
             )
-            self.model = TrainableDT(config, self.extractor)
+            self.model = TrainableDT(config)
 
         training_args = TrainingArguments(
             output_dir="output/",
@@ -448,8 +453,62 @@ class DecisionTransformerPolicy(Policy):
         return returns, ep_lens
 
     @staticmethod
-    def load(path):
-        self.model = TrainableDT.from_pretrained(path)
+    def load(path, env=None):
+        path = Path(path)
+        # Load the params from the path
+        with open(path / "params.yaml", "r") as file:
+            params = yaml.safe_load(file)
+        policy = DecisionTransformerPolicy(**params)
+
+        # Load the state_mean
+        with open(path / "state_mean.npy", "rb") as f:
+            policy.state_mean = np.load(f)
+
+        # Load the state_std
+        with open(path / "state_std.npy", "rb") as f:
+            policy.state_std = np.load(f)
+
+        # Load the model from the path
+        policy.model = TrainableDT.from_pretrained(path)
+
+        # Unpickle the extractor if there
+        if (path / "extractor.pkl").exists():
+            with open(path / "extractor.pkl", "rb") as file:
+                policy.extractor = pickle.load(file)
+
+        return policy
 
     def save(self, path):
+        path = Path(path)
+        # Save the model to the path
         self.model.save_pretrained(path)
+
+        # Save the params to a yaml file
+        params = {
+            "return_scale": self.return_scale,
+            "K": self.K,
+            "max_ep_len": self.max_ep_len,
+            "scale": self.scale,
+            "hidden_size": self.hidden_size,
+            "n_layer": self.n_layer,
+            "n_head": self.n_head,
+            "activation_function": self.activation_function,
+            "dropout": self.dropout,
+            "extractor_type": self.extractor_type,
+        }
+        # Save params to a yaml file
+        with open(path / "params.yaml", "w") as file:
+            yaml.dump(params, file)
+
+        # Save the state_mean
+        with open(path / "state_mean.npy", "wb") as f:
+            np.save(f, self.state_mean)
+
+        # Save the state_std
+        with open(path / "state_std.npy", "wb") as f:
+            np.save(f, self.state_std)
+
+        # Pickle the extractor
+        if self.extractor is not None:
+            with open(path / "extractor.pkl", "wb") as file:
+                pickle.dump(self.extractor, file)
