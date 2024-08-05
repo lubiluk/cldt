@@ -15,8 +15,7 @@ policy_kwargs:
   n_head: 1
   activation_function: relu
   dropout: 0.1
-
-extractor_type: dict
+  extractor: dict
 
 training_kwargs:
   num_epochs: 120

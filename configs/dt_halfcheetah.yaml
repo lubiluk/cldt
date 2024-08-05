@@ -1,4 +1,6 @@
 env: halfcheetah
+wrappers:
+  - step-api-compatibility
 dataset: cache/halfcheetah-medium-v2.pkl
 policy_type: dt
 save_path: results/halfcheetah-dt

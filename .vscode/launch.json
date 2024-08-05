@@ -38,7 +38,8 @@
             "program": "train_single.py",
             "console": "integratedTerminal",
             "args": [
-                "-c", "configs/panda-reach-dense.yaml",
+                "-c", "configs/tqcher_panda_push_dense.yaml",
+                "--training_kwargs", "{'n_timesteps': 1000}'"
             ]
         },
         ,
@@ -49,7 +50,8 @@
             "program": "evaluate_single.py",
             "console": "integratedTerminal",
             "args": [
-                "-c", "configs/halfcheetah.yaml",
+                "-c", "configs/tqcher_panda_push_dense.yaml",
+                "-l", "results/tqcher-panda-reach-dense.zip",
                 "--render"
             ]
         },

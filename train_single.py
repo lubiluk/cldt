@@ -9,30 +9,33 @@
 import argparse
 import pickle
 from cldt.envs import setup_env
-from cldt.extractors import setup_extractor
-from cldt.policies import setup_policy
+from cldt.policy import setup_policy
 from cldt.utils import (
     config_from_args,
-    extend_config,
-    load_config,
     seed_env,
     seed_libraries,
 )
 
 
 def train_single(
-    env,
-    dataset,
     policy_type,
-    save_path,
     seed,
+    env=None,
+    wrappers=None,
+    dataset=None,
+    save_path=None,
     render=False,
-    policy_kwargs={},
-    training_kwargs={},
-    eval_kwargs={},
-    extractor_type=None,
-    extractor_kwargs={},
+    policy_kwargs=None,
+    training_kwargs=None,
+    eval_kwargs=None,
 ):
+    if policy_kwargs is None:
+        policy_kwargs = {}
+    if training_kwargs is None:
+        training_kwargs = {}
+    if eval_kwargs is None:
+        eval_kwargs = {}
+
     # Save for printing
     env_name = env
     dataset_path = dataset
@@ -40,36 +43,42 @@ def train_single(
     # Set the seed
     seed_libraries(seed)
     # Create the environment
-    env = setup_env(env, render)
+    env = setup_env(env, wrappers=wrappers, render=render)
     # Seed the environment
     seed_env(env, seed)
 
-    # Setup the extractor for the policy
-    extractor = setup_extractor(
-        extractor_type, observation_space=env.observation_space, **extractor_kwargs
-    )
+    print("Policy type:", policy_type)
 
     # Setup the policy that we will train
-    policy = setup_policy(policy_type=policy_type, extractor=extractor, **policy_kwargs)
+    policy = setup_policy(policy_type=policy_type, **policy_kwargs)
 
-    # Load the dataset
-    with open(dataset, "rb") as f:
-        dataset = pickle.load(f)
+    if dataset is not None:
+        # Load the dataset
+        with open(dataset, "rb") as f:
+            dataset = pickle.load(f)
 
-    # Train the policy
-    print(f"Training policy {policy_type} on {env_name} using {dataset_path}...")
-    policy.learn(dataset=dataset, **training_kwargs)
+        # Train the policy
+        print(f"Training offline using dataset {dataset_path}...")
+        policy.learn_offline(dataset=dataset, observation_space=env.observation_space, action_space=env.action_space, **training_kwargs)
+    else:
+        # Train the policy
+        print(f"Training online on {env_name}...")
+        policy.learn_online(env=env, **training_kwargs)
+
     print("Training done!")
+
+    # Save the policy
+    if save_path is not None:
+        policy.save(path=save_path)
+        print(f"Policy saved to {save_path}")
+
 
     # Evaluate the policy
     print("Evaluating the policy...")
     score = policy.evaluate(env=env, render=render, **eval_kwargs)
     print(f"Score: {score}")
 
-    # Save the policy
-    if save_path is not None:
-        policy.save(path=save_path)
-        print(f"Policy saved to {save_path}")
+    env.close()
 
     return score
 
@@ -81,8 +90,15 @@ if __name__ == "__main__":
         "--env",
         type=str,
         required=False,
-        default=None,
         help="name of the environment",
+    )
+    parser.add_argument(
+        "-w",
+        "--wrappers",
+        nargs="+",
+        type=list,
+        default=None,
+        help="additional env wrappers",
     )
     parser.add_argument(
         "-d",
@@ -97,7 +113,6 @@ if __name__ == "__main__":
         "--policy-type",
         type=str,
         required=False,
-        default=None,
         help="policy type (list of available policies in cldt/policies.py)",
     )
     parser.add_argument(
@@ -105,7 +120,6 @@ if __name__ == "__main__":
         "--save-path",
         type=str,
         required=False,
-        default=None,
         help="path to save the policy",
     )
     parser.add_argument(
@@ -120,21 +134,18 @@ if __name__ == "__main__":
         "--policy-kwargs",
         type=str,
         required=False,
-        default=None,
         help="kwargs for the policy",
     )
     parser.add_argument(
         "--training-kwargs",
         type=str,
         required=False,
-        default=None,
         help="kwargs for the training",
     )
     parser.add_argument(
         "--eval-kwargs",
         type=str,
         required=False,
-        default=None,
         help="kwargs for the evaluation",
     )
     parser.add_argument(
@@ -142,7 +153,6 @@ if __name__ == "__main__":
         "--config",
         type=str,
         required=False,
-        default="configs/halfcheetah.yaml",
         help="path to the config file",
     )
 

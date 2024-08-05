@@ -1,30 +1,42 @@
 import argparse
 
 from cldt.envs import setup_env
-from cldt.policies import setup_policy
-from cldt.utils import config_from_args, eval_config, seed_env, seed_libraries
+from cldt.policy import load_policy
+from cldt.utils import config_from_args, seed_env, seed_libraries
 
-# TODO: doesn't work yet
+
 def evaluate_single(
-    env, policy_type, load_path, seed, render=False, policy_kwargs={}, eval_kwargs={}
+    policy_type,
+    load_path,
+    seed,
+    env,
+    wrappers=None,
+    render=False,
+    eval_kwargs=None,
+    **kwargs,
 ):
+    if eval_kwargs is None:
+        eval_kwargs = {}
+
     # Save for printing
     env_name = env
 
     # Set the seed
     seed_libraries(seed)
     # Create the environment
-    env = setup_env(env, render)
+    env = setup_env(env, wrappers=wrappers, render=render)
     # Seed the environment
     seed_env(env, seed)
 
     # Setup the policy that we will train
-    policy = setup_policy(policy_type=policy_type, load_path=load_path, **policy_kwargs)
+    policy = load_policy(policy_type=policy_type, load_path=load_path, env=env)
 
     # Evaluate the policy
     print(f"Evaluating the policy {policy_type} on {env_name}...")
     score = policy.evaluate(env=env, render=render, **eval_kwargs)
     print(f"Score: {score}")
+
+    env.close()
 
     return score
 
@@ -38,6 +50,14 @@ if __name__ == "__main__":
         required=False,
         default=None,
         help="name of the environment",
+    )
+    parser.add_argument(
+        "-w",
+        "--wrappers",
+        nargs="+",
+        type=list,
+        default=None,
+        help="additional env wrappers",
     )
     parser.add_argument(
         "-t",
@@ -70,11 +90,18 @@ if __name__ == "__main__":
         default=None,
         help="kwargs for the evaluation",
     )
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=str,
+        required=False,
+        help="path to the config file",
+    )
     args = parser.parse_args()
 
     config = config_from_args(args)
 
     print("Config:")
-    # print(config)
+    print(config)
 
-    # evaluate_single(**config)
+    evaluate_single(**config)

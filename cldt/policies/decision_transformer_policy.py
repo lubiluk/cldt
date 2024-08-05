@@ -3,7 +3,8 @@ import random
 
 import numpy as np
 import torch
-from cldt.policies import Policy
+from cldt.extractors import DictExtractor
+from cldt.policy import Policy
 
 from transformers import (
     DecisionTransformerConfig,
@@ -11,8 +12,6 @@ from transformers import (
     Trainer,
     TrainingArguments,
 )
-
-# {'ep_len': 50, 'ep_ret': -30.679904557496595, 'trajectories': [(...), (...), (...), (...), (...), (...), (...), (...), (...), (...), (...), (...), (...), (...), (...), (...), (...), (...), (...), ...]}
 
 
 @dataclass
@@ -194,7 +193,7 @@ class TrainableDT(DecisionTransformerModel):
         return super().forward(**kwargs)
 
 
-class DecisionTransformer(Policy):
+class DecisionTransformerPolicy(Policy):
     model = None
     return_scale = 1000.0
     K = 20
@@ -231,9 +230,11 @@ class DecisionTransformer(Policy):
         self.dropout = dropout
         self.extractor = extractor
 
-    def learn(
+    def learn_offline(
         self,
         dataset,
+        observation_space,
+        action_space,
         num_epochs=20,
         batch_size=64,
         learning_rate=1e-4,
@@ -244,6 +245,9 @@ class DecisionTransformer(Policy):
     ):
         # TODO: support training a pretrained model
         if self.model is None:
+            if self.extractor == "dict":
+                self.extractor = DictExtractor(observation_space)
+
             collator = DecisionTransformerGymDataCollator(
                 dataset=dataset,
                 max_len=self.K,
@@ -331,6 +335,27 @@ class DecisionTransformer(Policy):
 
         return action_preds[0, -1]
 
+    def reset(self, goal_return):
+        device = self.model.device
+        self.target_return = torch.tensor(
+            goal_return, device=device, dtype=torch.float32
+        ).reshape(1, 1)
+        self.states = torch.zeros((1, self.model.config.state_dim)).to(
+            device=device, dtype=torch.float32
+        )
+        self.actions = torch.zeros(
+            (0, self.model.config.act_dim), device=device, dtype=torch.float32
+        )
+        self.rewards = torch.zeros(0, device=device, dtype=torch.float32)
+        self.timesteps = torch.tensor(0, device=device, dtype=torch.long).reshape(1, 1)
+        self.goal_return = goal_return / self.return_scale
+
+    def act(self, obs, prev_reward, prev_done):
+        if self.extractor is not None:
+            state = self.extractor(obs)
+        else:
+            state = torch.from_numpy(obs)
+
     def evaluate(self, env, goal_return, num_episodes=1, max_ep_len=1000, render=False):
         device = self.model.device
         state_mean = self.state_mean
@@ -396,9 +421,7 @@ class DecisionTransformer(Policy):
                 else:
                     state = torch.from_numpy(state)
 
-                cur_state = (
-                    state.to(device=device).reshape(1, state_dim)
-                )
+                cur_state = state.to(device=device).reshape(1, state_dim)
                 states = torch.cat([states, cur_state], dim=0)
                 rewards[-1] = reward
 
@@ -424,7 +447,8 @@ class DecisionTransformer(Policy):
 
         return returns, ep_lens
 
-    def load(self, path):
+    @staticmethod
+    def load(path):
         self.model = TrainableDT.from_pretrained(path)
 
     def save(self, path):

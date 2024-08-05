@@ -19,7 +19,7 @@ import argparse
 import pickle
 
 from cldt.envs import setup_env
-from cldt.policies import setup_policy
+from cldt.policy import setup_policy
 from cldt.utils import seed_env, seed_libraries
 from cldt.wrappers import TrajectoryRecorder
 
