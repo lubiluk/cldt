@@ -57,39 +57,45 @@ class Policy(ABC):
     def act(self, obs):
         raise NotImplementedError
 
-    def evaluate(self, env, num_episodes=1, max_ep_len=None, render=False):
+    def evaluate(self, env, max_timesteps=1000, max_ep_len=None, render=False):
+        # TODO: This function is going to be moved outside of Policy class
+        # It is here for now because DecisionTransformerPolicy needs to subclass it
         returns = []
         ep_lens = []
 
-        for _ in range(num_episodes):
-            obs, _ = env.reset()
+        done = True
 
-            done = False
-            ep_len = 0
-            ep_ret = 0
+        for t in range(max_timesteps):
+            if done:
+                obs, _ = env.reset()
+                done = False
+                ep_ret = 0
+                ep_len = 0
+                done = False
 
-            while not done:
-                if render:
-                    env.render()
+            if render:
+                env.render()
 
-                act = self.act(obs)
+            act = self.act(obs)
 
-                res = env.step(act)
+            res = env.step(act)
 
-                if len(res) == 4:
-                    obs2, rew, done, _ = res
-                else:
-                    obs2, rew, ter, tru, _ = res
-                    done = ter or tru
+            if len(res) == 4:
+                obs2, rew, done, _ = res
+            else:
+                obs2, rew, ter, tru, _ = res
+                done = ter or tru
 
-                ep_ret += rew
-                ep_len += 1
-                obs = obs2
-                if max_ep_len and ep_len >= max_ep_len:
-                    break
+            ep_ret += rew
+            ep_len += 1
+            obs = obs2
 
-            returns.append(ep_ret)
-            ep_lens.append(ep_len)
+            if max_ep_len and ep_len >= max_ep_len:
+                done = True
+
+            if done:
+                returns.append(ep_ret)
+                ep_lens.append(ep_len)
 
         return returns, ep_lens
 

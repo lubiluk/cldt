@@ -361,7 +361,11 @@ class DecisionTransformerPolicy(Policy):
         else:
             state = torch.from_numpy(obs)
 
-    def evaluate(self, env, goal_return, num_episodes=1, max_ep_len=1000, render=False):
+    def evaluate(
+        self, env, goal_return, num_timesteps=1000, max_ep_len=1000, render=False
+    ):
+        # TODO: ultimately this function should be removed
+        # instead it should work with generic evaluate function
         device = self.model.device
         state_mean = self.state_mean
         state_std = self.state_std
@@ -382,73 +386,80 @@ class DecisionTransformerPolicy(Policy):
         scale = self.return_scale
         goal_return /= scale
 
-        for _ in range(num_episodes):
-            episode_return, episode_length = 0, 0
-            state, _ = env.reset()
+        done = True
 
-            if self.extractor is not None:
-                state = self.extractor(state)
-            else:
-                state = torch.from_numpy(state)
-
-            target_return = torch.tensor(
-                goal_return, device=device, dtype=torch.float32
-            ).reshape(1, 1)
-            states = state.reshape(1, state_dim).to(device=device, dtype=torch.float32)
-            actions = torch.zeros((0, act_dim), device=device, dtype=torch.float32)
-            rewards = torch.zeros(0, device=device, dtype=torch.float32)
-
-            if render:
-                env.render()
-
-            timesteps = torch.tensor(0, device=device, dtype=torch.long).reshape(1, 1)
-
-            for t in range(max_ep_len):
-                actions = torch.cat(
-                    [actions, torch.zeros((1, act_dim), device=device)], dim=0
-                )
-                rewards = torch.cat([rewards, torch.zeros(1, device=device)])
-
-                action = self._get_action(
-                    (states - state_mean) / state_std,
-                    actions,
-                    rewards,
-                    target_return,
-                    timesteps,
-                )
-                actions[-1] = action
-                action = action.detach().cpu().numpy()
-
-                state, reward, done, _ = env.step(action)
+        for _ in range(num_timesteps):
+            if done:
+                episode_return, episode_length = 0, 0
+                state, _ = env.reset()
+                done = False
 
                 if self.extractor is not None:
                     state = self.extractor(state)
                 else:
                     state = torch.from_numpy(state)
 
-                cur_state = state.to(device=device).reshape(1, state_dim)
-                states = torch.cat([states, cur_state], dim=0)
-                rewards[-1] = reward
+                target_return = torch.tensor(
+                    goal_return, device=device, dtype=torch.float32
+                ).reshape(1, 1)
+                states = state.reshape(1, state_dim).to(device=device, dtype=torch.float32)
+                actions = torch.zeros((0, act_dim), device=device, dtype=torch.float32)
+                rewards = torch.zeros(0, device=device, dtype=torch.float32)
 
-                pred_return = target_return[0, -1] - (reward / scale)
-                target_return = torch.cat(
-                    [target_return, pred_return.reshape(1, 1)], dim=1
-                )
-                timesteps = torch.cat(
-                    [
-                        timesteps,
-                        torch.ones((1, 1), device=device, dtype=torch.long) * (t + 1),
-                    ],
-                    dim=1,
-                )
+                if render:
+                    env.render()
 
-                episode_return += reward
-                episode_length += 1
+                timesteps = torch.tensor(0, device=device, dtype=torch.long).reshape(1, 1)
 
-                if done:
-                    returns.append(episode_return)
-                    ep_lens.append(episode_length)
-                    break
+                t = 0
+
+            actions = torch.cat(
+                [actions, torch.zeros((1, act_dim), device=device)], dim=0
+            )
+            rewards = torch.cat([rewards, torch.zeros(1, device=device)])
+
+            action = self._get_action(
+                (states - state_mean) / state_std,
+                actions,
+                rewards,
+                target_return,
+                timesteps,
+            )
+            actions[-1] = action
+            action = action.detach().cpu().numpy()
+
+            state, reward, done, _ = env.step(action)
+
+            if self.extractor is not None:
+                state = self.extractor(state)
+            else:
+                state = torch.from_numpy(state)
+
+            cur_state = state.to(device=device).reshape(1, state_dim)
+            states = torch.cat([states, cur_state], dim=0)
+            rewards[-1] = reward
+
+            pred_return = target_return[0, -1] - (reward / scale)
+            target_return = torch.cat([target_return, pred_return.reshape(1, 1)], dim=1)
+            timesteps = torch.cat(
+                [
+                    timesteps,
+                    torch.ones((1, 1), device=device, dtype=torch.long) * (t + 1),
+                ],
+                dim=1,
+            )
+
+            episode_return += reward
+            episode_length += 1
+
+            t += 1
+
+            if max_ep_len and episode_length >= max_ep_len:
+                done = True
+
+            if done:
+                returns.append(episode_return)
+                ep_lens.append(episode_length)
 
         return returns, ep_lens
 

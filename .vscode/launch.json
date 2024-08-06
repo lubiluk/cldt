@@ -26,9 +26,9 @@
                 "-e",
                 "panda-reach-dense",
                 "-n",
-                "1000",
+                "1000000",
                 "-o",
-                "datasets/panda-reach-dense.pkl"
+                "datasets/panda_reach_dense.pkl"
             ]
         },
         {
@@ -38,8 +38,7 @@
             "program": "train_single.py",
             "console": "integratedTerminal",
             "args": [
-                "-c", "configs/tqcher_panda_push_dense.yaml",
-                "--training_kwargs", "{'n_timesteps': 1000}'"
+                "-c", "configs/dt_panda_reach_dense.yaml",
             ]
         },
         ,
@@ -50,8 +49,8 @@
             "program": "evaluate_single.py",
             "console": "integratedTerminal",
             "args": [
-                "-c", "configs/tqcher_panda_push_dense.yaml",
-                "-l", "results/tqcher-panda-reach-dense.zip",
+                "-c", "configs/tqcher_panda_push_sparse.yaml",
+                "-l", "cache/tqc.zip",
                 "--render"
             ]
         },

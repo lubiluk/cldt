@@ -40,7 +40,13 @@ class TrajectoryRecorder(gym.Wrapper):
         return obs, info
 
     def step(self, action):
-        obs, reward, done, info = self.env.step(action)
+        res = self.env.step(action)
+
+        if len(res) == 4:
+            obs, reward, done, info = res
+        else:
+            obs, reward, ter, tru, info = res
+            done = ter or tru
 
         if self.dict_obs:
             for k in self._last_obs.keys():

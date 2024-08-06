@@ -1,6 +1,6 @@
 env: panda-reach-dense
-dataset: datasets/panda-reach-dense.pkl
-save_path: results/panda-reach-dense-dt
+dataset: datasets/panda_reach_dense.pkl
+save_path: results/dt_panda_reach_dense
 seed: 1234
 render: False
 
@@ -28,4 +28,4 @@ training_kwargs:
 
 eval_kwargs:
   goal_return: 0
-  num_episodes: 100
+  num_timesteps: 10000

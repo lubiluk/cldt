@@ -12,3 +12,7 @@ class ReachPolicy(Policy):
         act = 5.0 * (desired_position - current_position)
 
         return act
+    
+    @staticmethod
+    def load(load_path, env=None):
+        return ReachPolicy()

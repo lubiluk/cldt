@@ -28,4 +28,4 @@ training_kwargs:
 
 eval_kwargs:
   goal_return: 0
-  num_episodes: 10
+  num_timesteps: 10000

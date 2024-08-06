@@ -25,4 +25,4 @@ training_kwargs:
   log_dir: output/tqcher-panda-pick-and-place-dense
 
 eval_kwargs:
-  num_episodes: 100
+  num_timesteps: 1000

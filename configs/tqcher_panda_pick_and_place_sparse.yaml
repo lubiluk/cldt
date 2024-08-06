@@ -1,6 +1,6 @@
 env: panda-pick-and-place-sparse
-wrappers: 
-  - time-feature
+# wrappers: 
+#   - time-feature
 save_path: results/tqcher-panda-pick-and-place-sparse
 seed: 1234
 render: False
@@ -25,4 +25,4 @@ training_kwargs:
   log_dir: output/tqcher-panda-pick-and-place-sparse
 
 eval_kwargs:
-  num_episodes: 100
+  num_timesteps: 1000

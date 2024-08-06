@@ -7,4 +7,4 @@ render: False
 policy_type: reach
 
 eval_kwargs:
-  num_episodes: 100
+  num_timesteps: 1000

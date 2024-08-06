@@ -1,22 +1,21 @@
-env: halfcheetah
-wrappers:
-  - step-api-compatibility
-dataset: cache/halfcheetah-medium-v2.pkl
-policy_type: dt
-save_path: results/dt_halfcheetah
+env: panda-push-dense
+dataset: datasets/panda_push_dense.pkl
+save_path: results/dt_panda_push_dense
 seed: 1234
 render: False
 
+policy_type: dt
 policy_kwargs:
-  return_scale: 1000.0
+  return_scale: 100.0
   K: 20
-  max_ep_len: 1000
-  scale: 1000
+  max_ep_len: 100
+  scale: 100
   hidden_size: 128
   n_layer: 3
   n_head: 1
   activation_function: relu
   dropout: 0.1
+  extractor_type: dict
 
 training_kwargs:
   num_epochs: 120
@@ -28,5 +27,5 @@ training_kwargs:
   max_grad_norm: 0.25
 
 eval_kwargs:
-  goal_return: 6000
+  goal_return: 0
   num_timesteps: 10000

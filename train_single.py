@@ -100,8 +100,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-w",
         "--wrappers",
-        nargs="+",
-        type=list,
+        action='append',
         default=None,
         help="additional env wrappers",
     )

@@ -19,7 +19,7 @@ import argparse
 import pickle
 
 from cldt.envs import setup_env
-from cldt.policy import setup_policy
+from cldt.policy import load_policy
 from cldt.utils import seed_env, seed_libraries
 from cldt.wrappers import TrajectoryRecorder
 
@@ -28,7 +28,8 @@ def generate_dataset(
     policy_type,
     policy_path,
     env_name,
-    num_episodes,
+    wrappers,
+    num_timesteps,
     max_episode_len,
     output_path,
     render,
@@ -38,25 +39,23 @@ def generate_dataset(
     seed_libraries(seed)
 
     # Create the environment
-    env = setup_env(env_name, render)
+    env = setup_env(env_name=env_name, wrappers=wrappers, render=render)
 
     seed_env(env, seed)
 
     # Setup the policy that will generate episodes
-    policy = setup_policy(policy_type=policy_type, load_path=policy_path)
+    policy = load_policy(policy_type=policy_type, load_path=policy_path, env=env)
 
     # Initialize the dataset, it's a list of trajectories
     # Each trajectory is a dictionary with keys 'observations',
     # 'actions', 'rewards', 'next_observations', 'terminals'
     # Under each key is an numpy array of values for each timestep in the episode
 
-    print(f"Generating dataset with {num_episodes} episodes...")
+    print(f"Generating dataset with {num_timesteps} time steps...")
 
     # Generate the dataset
     env = TrajectoryRecorder(env)
-    _ = policy.evaluate(
-        env, num_episodes=num_episodes, max_ep_len=max_episode_len
-    )
+    _ = policy.evaluate(env, max_timesteps=num_timesteps, max_ep_len=max_episode_len)
 
     trajectories = env.numpy_trajectories()
 
@@ -96,12 +95,19 @@ if __name__ == "__main__":
         help="name of the environment",
     )
     parser.add_argument(
+        "-w",
+        "--wrappers",
+        action='append',
+        default=None,
+        help="additional env wrappers",
+    )
+    parser.add_argument(
         "-n",
-        "--num-episodes",
+        "--num-timesteps",
         type=int,
         required=False,
         default=100,
-        help="number of episodes to run",
+        help="number of time steps to run",
     )
     parser.add_argument(
         "-l",
@@ -132,7 +138,8 @@ if __name__ == "__main__":
         args.policy_type,
         args.policy_path,
         args.env,
-        args.num_episodes,
+        args.wrappers,
+        args.num_timesteps,
         args.max_length,
         args.output_path,
         args.render,
