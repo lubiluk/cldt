@@ -1,4 +1,5 @@
 import argparse
+from statistics import mean
 
 from cldt.envs import setup_env
 from cldt.policy import load_policy
@@ -33,8 +34,11 @@ def evaluate_single(
 
     # Evaluate the policy
     print(f"Evaluating the policy {policy_type} on {env_name}...")
-    score = policy.evaluate(env=env, render=render, **eval_kwargs)
-    print(f"Score: {score}")
+    returns, eplen = policy.evaluate(env=env, render=render, **eval_kwargs)
+    score = mean(returns)
+    lens = mean(eplen)
+    print(f"Mean return: {score}")
+    print(f"Mean episode length: {lens}")
 
     env.close()
 

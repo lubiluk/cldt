@@ -1,4 +1,6 @@
 env: panda-reach-dense
+wrappers:
+  - step-api-compatibility
 dataset: datasets/panda_reach_dense.pkl
 save_path: results/dt_panda_reach_dense
 seed: 1234
