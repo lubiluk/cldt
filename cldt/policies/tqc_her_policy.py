@@ -1,6 +1,7 @@
 from stable_baselines3 import HerReplayBuffer
 from cldt.policy import Policy
 from sb3_contrib import TQC
+from stable_baselines3.common.monitor import Monitor, ResultsWriter
 
 
 class TqcHerPolicy(Policy):
@@ -25,7 +26,11 @@ class TqcHerPolicy(Policy):
         self.replay_buffer_kwargs = replay_buffer_kwargs
         self.tau = tau
 
-    def learn_online(self, env, n_timesteps):
+    def learn_online(self, env, n_timesteps, log_dir=None):
+        if log_dir is not None:
+            # Monitor the learning process
+            env = Monitor(env, filename=log_dir)
+
         self.model = TQC(
             policy=self.policy,
             env=env,

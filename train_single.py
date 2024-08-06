@@ -28,6 +28,7 @@ def train_single(
     policy_kwargs=None,
     training_kwargs=None,
     eval_kwargs=None,
+    log_dir=None,
 ):
     if policy_kwargs is None:
         policy_kwargs = {}
@@ -59,7 +60,12 @@ def train_single(
 
         # Train the policy
         print(f"Training offline using dataset {dataset_path}...")
-        policy.learn_offline(dataset=dataset, observation_space=env.observation_space, action_space=env.action_space, **training_kwargs)
+        policy.learn_offline(
+            dataset=dataset,
+            observation_space=env.observation_space,
+            action_space=env.action_space,
+            **training_kwargs,
+        )
     else:
         # Train the policy
         print(f"Training online on {env_name}...")
@@ -71,7 +77,6 @@ def train_single(
     if save_path is not None:
         policy.save(path=save_path)
         print(f"Policy saved to {save_path}")
-
 
     # Evaluate the policy
     print("Evaluating the policy...")
@@ -154,6 +159,12 @@ if __name__ == "__main__":
         type=str,
         required=False,
         help="path to the config file",
+    )
+    parser.add_argument(
+        "--log-dir",
+        type=str,
+        required=False,
+        help="directory to save logs",
     )
 
     args = parser.parse_args()

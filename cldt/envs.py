@@ -30,6 +30,10 @@ def setup_env(env_name, wrappers=[], render=False) -> gym.Env:
         env = make_panda_env("PandaPushDense-v3", render_mode)
     elif env_name == "panda-push-sparse":
         env = make_panda_env("PandaPush-v3", render_mode)
+    elif env_name == "panda-pick-and-place-dense":
+        env = make_panda_env("PandaPickAndPlaceDense-v3", render_mode)
+    elif env_name == "panda-pick-and-place-sparse":
+        env = make_panda_env("PandaPickAndPlace-v3", render_mode)
     else:
         raise ValueError(f"Unsupported environment name: {env_name}")
 
