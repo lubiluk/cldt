@@ -26,7 +26,7 @@ class TqcHerPolicy(Policy):
         self.replay_buffer_kwargs = replay_buffer_kwargs
         self.tau = tau
 
-    def learn_online(self, env, n_timesteps, log_dir=None):
+    def learn_online(self, env, n_timesteps, log_dir=None, device="auto"):
         if log_dir is not None:
             # Monitor the learning process
             env = Monitor(env, filename=log_dir)
@@ -43,6 +43,7 @@ class TqcHerPolicy(Policy):
             policy_kwargs=self.policy_kwargs,
             tau=self.tau,
             verbose=1,
+            device=device
         )
 
         self.model.learn(n_timesteps)
