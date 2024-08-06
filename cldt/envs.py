@@ -21,16 +21,16 @@ def setup_env(env_name, wrappers=[], render=False) -> gym.Env:
         env = gym.make("HalfCheetah-v4", render_mode=render_mode)
     elif env_name == "fetch-reach-dense":
         # import gymnasium_robotics
-        env = gym.make("FetchReachDense-v3", render_mode=render_mode)
+        env = gym.make("FetchReachDense-v2", render_mode=render_mode)
     elif env_name == "fetch-reach-sparse":
         # import gymnasium_robotics
-        env = gym.make("FetchReach-v3", render_mode=render_mode)
+        env = gym.make("FetchReach-v2", render_mode=render_mode)
     elif env_name == "fetch-push-dense":
         # import gymnasium_robotics
-        env = gym.make("FetchPushDense-v3", render_mode=render_mode)
+        env = gym.make("FetchPushDense-v2", render_mode=render_mode)
     elif env_name == "fetch-push-sparse":
         # import gymnasium_robotics
-        env = gym.make("FetchPush-v3", render_mode=render_mode)
+        env = gym.make("FetchPush-v2", render_mode=render_mode)
     elif env_name == "panda-reach-dense":
         env = make_panda_env("PandaReachDense-v3", render_mode)
     elif env_name == "panda-reach-sparse":
