@@ -22,8 +22,7 @@ policy_kwargs:
 
 training_kwargs:
   n_timesteps: 100000
-  log_dir: output/tqcher-fetch
--push-sparse
+  log_dir: output/tqcher-fetch-push-sparse
 
 eval_kwargs:
   num_episodes: 100
