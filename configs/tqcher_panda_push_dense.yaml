@@ -1,7 +1,5 @@
 env: panda-push-dense
-wrappers: 
-  - time-feature
-save_path: results/tqcher-panda-push-dense
+save_path: results/tqcher_panda_push_dense_nowrap
 seed: 1234
 render: False
 
@@ -22,7 +20,7 @@ policy_kwargs:
 
 training_kwargs:
   n_timesteps: 100000
-  log_dir: output/tqcher-panda-push-dense
+  log_dir: output/tqcher_panda_push_dense_nowrap
 
 eval_kwargs:
   num_timesteps: 1000

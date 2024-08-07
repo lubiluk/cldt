@@ -55,7 +55,7 @@ def generate_dataset(
 
     # Generate the dataset
     env = TrajectoryRecorder(env)
-    _ = policy.evaluate(env, max_timesteps=num_timesteps, max_ep_len=max_episode_len)
+    _ = policy.evaluate(env, num_timesteps=num_timesteps, max_ep_len=max_episode_len)
 
     trajectories = env.numpy_trajectories()
 
