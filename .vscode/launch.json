@@ -38,7 +38,7 @@
             "program": "train_single.py",
             "console": "integratedTerminal",
             "args": [
-                "-c", "configs/dt_panda_reach_dense.yaml",
+                "-c", "configs/dt_panda_push_dense_tf.yaml",
             ]
         },
         ,

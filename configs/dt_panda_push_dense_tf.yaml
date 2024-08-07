@@ -1,5 +1,8 @@
 env: panda-push-dense
-dataset: datasets/panda_push_dense.pkl
+wrappers:
+  - step-api-compatibility
+  - time-feature
+dataset: datasets/panda_push_dense_tf_1m.pkl 
 save_path: results/dt_panda_push_dense
 seed: 1234
 render: False

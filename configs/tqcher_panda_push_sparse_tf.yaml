@@ -25,4 +25,4 @@ training_kwargs:
   log_dir: output/tqcher-panda-push-sparse
 
 eval_kwargs:
-  num_timesteps: 1000
+  num_timesteps: 10000
