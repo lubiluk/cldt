@@ -57,7 +57,7 @@ class Policy(ABC):
     def act(self, obs):
         raise NotImplementedError
 
-    def evaluate(self, env, max_timesteps=1000, max_ep_len=None, render=False):
+    def evaluate(self, env, num_timesteps=1000, max_ep_len=None, render=False):
         # TODO: This function is going to be moved outside of Policy class
         # It is here for now because DecisionTransformerPolicy needs to subclass it
         returns = []
@@ -65,7 +65,7 @@ class Policy(ABC):
 
         done = True
 
-        for t in range(max_timesteps):
+        for t in range(num_timesteps):
             if done:
                 obs, _ = env.reset()
                 done = False
