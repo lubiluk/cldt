@@ -1,5 +1,5 @@
 env: panda-push-dense
-save_path: results/tqcher_panda_push_dense_nowrap
+save_path: trained/tqcher_panda_push_dense_nowrap
 seed: 1234
 render: False
 

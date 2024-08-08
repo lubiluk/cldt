@@ -1,7 +1,7 @@
 env: fetch-reach-sparse
 wrappers: 
   - time-feature
-save_path: results/tqcher-fetch-reach-sparse
+save_path: trained/tqcher-fetch-reach-sparse
 seed: 1234
 render: False
 

@@ -1,7 +1,7 @@
 env: panda-pick-and-place-sparse
 wrappers: 
   - time-feature
-save_path: results/tqcher-panda-pick-and-place-sparse
+save_path: trained/tqcher-panda-pick-and-place-sparse
 seed: 1234
 render: False
 

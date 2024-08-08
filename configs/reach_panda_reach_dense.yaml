@@ -1,6 +1,6 @@
 env: panda-reach-dense
 dataset: datasets/panda-reach-dense.pkl
-save_path: results/panda-reach-dense-dt
+save_path: trained/panda-reach-dense-dt
 seed: 1234
 render: False
 

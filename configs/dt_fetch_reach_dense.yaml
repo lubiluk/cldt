@@ -1,6 +1,6 @@
 env: fetch-reach-dense
 dataset: datasets/fetch-reach-dense.pkl
-save_path: results/fetch-reach-dense-dt
+save_path: trained/fetch-reach-dense-dt
 seed: 1234
 render: False
 

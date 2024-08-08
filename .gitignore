@@ -2,7 +2,7 @@ cache/
 .DS_Store
 notebooks/output/
 output/
-results/
+trained/
 datasets/
 
 # Byte-compiled / optimized / DLL files

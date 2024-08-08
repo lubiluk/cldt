@@ -1,7 +1,7 @@
 env: panda-push-sparse
 wrappers: 
   - time-feature
-save_path: results/tqcher-panda-push-sparse
+save_path: trained/tqcher-panda-push-sparse
 seed: 1234
 render: False
 

@@ -1,5 +1,5 @@
 env: panda-push-sparse
-save_path: results/tqcher_panda_push_sparse_nowrap
+save_path: trained/tqcher_panda_push_sparse_nowrap
 seed: 1234
 render: False
 

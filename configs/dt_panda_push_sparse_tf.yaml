@@ -1,8 +1,9 @@
-env: panda-reach-sparse
+env: panda-push-sparse
 wrappers:
   - step-api-compatibility
-dataset: datasets/panda_reach_sparse.pkl
-save_path: results/dt_panda_reach_sparse
+  - time-feature
+dataset: datasets/panda_push_sparse_tf_1m.pkl 
+save_path: trained/dt_panda_push_sparse_tf_1m
 seed: 1234
 render: False
 
