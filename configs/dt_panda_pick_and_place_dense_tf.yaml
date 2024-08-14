@@ -1,9 +1,9 @@
-env: panda-push-sparse
+env: panda-push-dense
 wrappers:
   - step-api-compatibility
   - time-feature
-dataset: datasets/panda_push_sparse_tf.pkl 
-save_path: trained/dt_panda_push_sparse_tf
+dataset: datasets/panda_pick_and_place_dense_tf.pkl 
+save_path: trained/dt_panda_pick_and_place_dense_tf
 seed: 1234
 render: False
 

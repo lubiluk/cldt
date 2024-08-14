@@ -1,14 +1,14 @@
 env: panda-pick-and-place-sparse
 wrappers: 
   - time-feature
-save_path: trained/tqcher-panda-pick-and-place-sparse
+save_path: trained/tqcher_panda_pick_and_place_sparse_tf
 seed: 1234
 render: False
 
 policy_type: tqc+her
 policy_kwargs:
   batch_size: 2048
-  buffer_size: 1000000
+  buffer_size: 1_000_000
   gamma: 0.95
   learning_rate: 0.001
   policy: MultiInputPolicy
@@ -21,8 +21,8 @@ policy_kwargs:
   tau: 0.05
 
 training_kwargs:
-  n_timesteps: 1000000
-  log_dir: output/tqcher-panda-pick-and-place-sparse
+  n_timesteps: 1_000_000
+  log_dir: output/tqcher_panda_pick_and_place_sparse_tf
 
 eval_kwargs:
   num_timesteps: 1000

@@ -1,6 +1,9 @@
-env: fetch-reach-dense
-dataset: datasets/fetch-reach-dense.pkl
-save_path: trained/fetch-reach-dense-dt
+env: panda-reach-dense
+wrappers:
+  - step-api-compatibility
+  - time-feature
+dataset: datasets/panda_reach_dense.pkl
+save_path: trained/dt_panda_reach_dense
 seed: 1234
 render: False
 
@@ -15,7 +18,7 @@ policy_kwargs:
   n_head: 1
   activation_function: relu
   dropout: 0.1
-  extractor: dict
+  extractor_type: dict
 
 training_kwargs:
   num_epochs: 120

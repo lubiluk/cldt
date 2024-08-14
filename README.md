@@ -76,3 +76,13 @@ Train Decision-Transformer on PandaReach.
 ```bash
 python train_single.py -c configs/dt_panda_reach_dense.yaml  --dataset datasets/panda_reach_dense_100k.pkl 
 ```
+
+---
+
+## Experiments TODO
+
+1. Train TQC on all envs.
+2. Generate datasets of sizes 1m 500k 250k 100k 50k 10k.
+3. Train DT on all envs and all dataset sizes.
+
+Repeat on a different seed?
