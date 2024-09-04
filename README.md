@@ -1,31 +1,3 @@
-# cldt
-Continual learning with decision transformer
-
-## Downloading datasets from D4RL
-
-Determine your desired dataset name, see dataset_infos.py. Then run the download script:
-
-```bash
-python download_dataset.py halfcheetah-expert-v2
-```
-
-## Training a Decision Transformer
-
-Environment should be a supported one, see envs.py.
-Policy should be a supported one, see policies.py
-
-You can either create a YAML config file or provide agruments directly. You can also provide a config file an overwrite it's values using arguments.
-
-```bash
-Usage:
-usage: train_single.py [-h] [-e ENV] [-d DATASET] [-t POLICY_TYPE] [-s SAVE_PATH] [--seed SEED] [--render] [--policy-kwargs POLICY_KWARGS] [--training-kwargs TRAINING_KWARGS] [--eval-kwargs EVAL_KWARGS] [-c CONFIG]
-
-Example:
-python train_single.py -e halfcheetah -d cache/halfcheetah-expert-v2 -p dt -s trained/haflcheetah-dt --seed 1234
-python train_single.py -c configs/halfcheetah.yaml
-```
-
-## Generating a dataset
 
 1. Add your policy to `policies.py`.
 2. Add you environment to `envs.py`.
@@ -86,3 +58,13 @@ python train_single.py -c configs/dt_panda_reach_dense.yaml  --dataset datasets/
 3. Train DT on all envs and all dataset sizes.
 
 Repeat on a different seed?
+
+--- 
+
+## Train fast using RL Zoo
+
+```bash
+python -m rl_zoo3.train --env PandaPushDense-v3 --algo tqc --conf-file configs/tqcher_zoo.yaml --folder trained --save-freq 100000 --hyperparams n_envs:4 gradient_steps:-1
+```
+
+`n_envs` tells how many environments should work in parallel.

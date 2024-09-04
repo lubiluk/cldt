@@ -13,6 +13,7 @@ PandaPushDense-v3:
   policy_kwargs: 
     net_arch: [512, 512, 512]
     n_critics: 2
+  learning_starts: 1000
   # n_envs: 4
   # gradient_steps: -1
 
@@ -31,6 +32,7 @@ PandaPush-v3:
   policy_kwargs: 
     net_arch: [512, 512, 512]
     n_critics: 2
+
 
 PandaPickAndPlaceDense-v3:
   n_timesteps: 1_000_000
