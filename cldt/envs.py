@@ -1,4 +1,4 @@
-import gymnasium as gym
+import gym
 
 from cldt.wrappers import StepAPICompatibility
 
@@ -32,17 +32,17 @@ def setup_env(env_name, wrappers=[], render=False) -> gym.Env:
         # import gymnasium_robotics
         env = gym.make("FetchPush-v2", render_mode=render_mode)
     elif env_name == "panda-reach-dense":
-        env = make_panda_env("PandaReachDense-v3", render_mode)
+        env = make_panda_env("PandaReachDense-v", render_mode)
     elif env_name == "panda-reach-sparse":
-        env = make_panda_env("PandaReach-v3", render_mode)
+        env = make_panda_env("PandaReach-v1", render_mode)
     elif env_name == "panda-push-dense":
-        env = make_panda_env("PandaPushDense-v3", render_mode)
+        env = make_panda_env("PandaPushDense-v1", render_mode)
     elif env_name == "panda-push-sparse":
-        env = make_panda_env("PandaPush-v3", render_mode)
+        env = make_panda_env("PandaPush-v1", render_mode)
     elif env_name == "panda-pick-and-place-dense":
-        env = make_panda_env("PandaPickAndPlaceDense-v3", render_mode)
+        env = make_panda_env("PandaPickAndPlaceDense-v1", render_mode)
     elif env_name == "panda-pick-and-place-sparse":
-        env = make_panda_env("PandaPickAndPlace-v3", render_mode)
+        env = make_panda_env("PandaPickAndPlace-v1", render_mode)
     else:
         raise ValueError(f"Unsupported environment name: {env_name}")
 

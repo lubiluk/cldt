@@ -1,4 +1,4 @@
-import gymnasium as gym
+import gym
 import numpy as np
 
 
@@ -93,3 +93,4 @@ class TrajectoryRecorder(gym.Wrapper):
             )
 
         return np_trajectories
+
