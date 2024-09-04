@@ -1,7 +1,7 @@
 env: panda-push-dense
 wrappers: 
   - time-feature
-save_path: trained/tqcher_panda_push_dense_tf
+save_path: demonstrators/tqcher_panda_push_dense_tf
 seed: 1234
 render: False
 

@@ -54,12 +54,12 @@ def train_single(
     policy = setup_policy(policy_type=policy_type, **policy_kwargs)
 
     if dataset is not None:
-        # Load the dataset
+        # Load the datasets
         with open(dataset, "rb") as f:
             dataset = pickle.load(f)
 
         # Train the policy
-        print(f"Training offline using dataset {dataset_path}...")
+        print(f"Training offline using datasets {dataset_path}...")
         policy.learn_offline(
             dataset=dataset,
             observation_space=env.observation_space,
@@ -106,11 +106,11 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-d",
-        "--dataset",
+        "--datasets",
         type=str,
         required=False,
         default=None,
-        help="path to the dataset",
+        help="path to the datasets",
     )
     parser.add_argument(
         "-t",
@@ -157,6 +157,7 @@ if __name__ == "__main__":
         "--config",
         type=str,
         required=False,
+        default='configs/dt_panda_reach_sparse_tf.yaml',
         help="path to the config file",
     )
     parser.add_argument(

@@ -23,12 +23,12 @@ class DecisionTransformerGymDataCollator:
     max_len: int = 20  # subsets of the episode we use for training
     state_dim: int = 17  # size of state space
     act_dim: int = 6  # size of action space
-    max_ep_len: int = 1000  # max episode length in the dataset
+    max_ep_len: int = 1000  # max episode length in the datasets
     scale: float = 1000.0  # normalization of rewards/returns
     state_mean: np.array = None  # to store state means
     state_std: np.array = None  # to store state stds
     p_sample: np.array = None  # a distribution to take account trajectory lengths
-    n_traj: int = 0  # to store the number of trajectories in the dataset
+    n_traj: int = 0  # to store the number of trajectories in the datasets
 
     def __init__(self, dataset, max_len, max_ep_len, scale, extractor=None) -> None:
         self.act_dim = len(dataset[0]["actions"][0])
@@ -43,7 +43,7 @@ class DecisionTransformerGymDataCollator:
         self.scale = scale
         self.extractor = extractor
 
-        # calculate dataset stats for normalization of states
+        # calculate datasets stats for normalization of states
         states = []
         traj_lens = []
         for path in dataset:
@@ -80,7 +80,7 @@ class DecisionTransformerGymDataCollator:
             replace=True,
             p=self.p_sample,  # reweights so we sample according to timesteps
         )
-        # a batch of dataset features
+        # a batch of datasets features
         s, a, r, d, rtg, timesteps, mask = [], [], [], [], [], [], []
 
         for ind in batch_inds:
@@ -95,7 +95,7 @@ class DecisionTransformerGymDataCollator:
                 else feature["observations"]
             )
 
-            # get sequences from dataset
+            # get sequences from datasets
             s.append(
                 np.array(obs[si : si + self.max_len]).reshape(1, -1, self.state_dim)
             )

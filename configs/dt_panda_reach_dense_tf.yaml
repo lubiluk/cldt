@@ -3,7 +3,7 @@ wrappers:
   - step-api-compatibility
   - time-feature
 dataset: datasets/panda_reach_dense.pkl
-save_path: trained/dt_panda_reach_dense
+save_path: demonstrators/dt_panda_reach_dense
 seed: 1234
 render: False
 

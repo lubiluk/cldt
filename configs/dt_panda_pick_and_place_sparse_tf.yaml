@@ -3,7 +3,7 @@ wrappers:
   - step-api-compatibility
   - time-feature
 dataset: datasets/panda_pick_and_place_sparse_tf.pkl 
-save_path: trained/dt_panda_pick_and_place_sparse_tf
+save_path: demonstrators/dt_panda_pick_and_place_sparse_tf
 seed: 1234
 render: False
 

@@ -3,7 +3,7 @@ wrappers:
   - step-api-compatibility
 dataset: cache/halfcheetah-medium-v2.pkl
 policy_type: dt
-save_path: trained/dt_halfcheetah
+save_path: demonstrators/dt_halfcheetah
 seed: 1234
 render: False
 

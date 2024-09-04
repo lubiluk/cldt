@@ -255,7 +255,7 @@ REF_MAX_SCORE = {
     'flow-merge-random-v0' : 330.03179 ,
     'flow-merge-controller-v0' : 330.03179 ,
     'carla-lane-v0': 1023.5784385429523,
-    'carla-town-v0': 2440.1772022247314, # avg dataset score
+    'carla-town-v0': 2440.1772022247314, # avg datasets score
     'bullet-halfcheetah-random-v0': 2381.6725,
     'bullet-halfcheetah-medium-v0': 2381.6725,
     'bullet-halfcheetah-expert-v0': 2381.6725,

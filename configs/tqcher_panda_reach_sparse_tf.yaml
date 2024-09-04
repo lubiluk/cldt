@@ -1,7 +1,7 @@
 env: panda-reach-sparse
 wrappers: 
   - time-feature
-save_path: trained/tqcher_panda_reach_sparse_tf
+save_path: demonstrators/tqcher_panda_reach_sparse_tf
 seed: 1234
 render: False
 

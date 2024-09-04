@@ -16,10 +16,10 @@ def download_dataset_from_url(dataset_url, output_dir):
     dataset_filepath = os.path.join(output_dir, dataset_name)
 
     if not os.path.exists(dataset_filepath):
-        print("Downloading dataset:", dataset_url, "to", dataset_filepath)
+        print("Downloading datasets:", dataset_url, "to", dataset_filepath)
         urllib.request.urlretrieve(dataset_url, dataset_filepath)
     if not os.path.exists(dataset_filepath):
-        raise IOError("Failed to download dataset from %s" % dataset_url)
+        raise IOError("Failed to download datasets from %s" % dataset_url)
 
     return dataset_filepath
 
@@ -151,7 +151,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "name",
         type=str,
-        help="name of the dataset (see dataset_infos.py)",
+        help="name of the datasets (see dataset_infos.py)",
     )
     parser.add_argument(
         "-o",
@@ -159,7 +159,7 @@ if __name__ == "__main__":
         type=str,
         required=False,
         default="datasets",
-        help="directory to save the dataset",
+        help="directory to save the datasets",
     )
 
     args = parser.parse_args()
