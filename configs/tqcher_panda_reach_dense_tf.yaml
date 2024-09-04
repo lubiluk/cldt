@@ -21,7 +21,7 @@ policy_kwargs:
   tau: 0.05
 
 training_kwargs:
-  n_timesteps: 1_000_000
+  n_timesteps: 20_000
   log_dir: output/tqcher_panda_reach_dense_tf
 
 eval_kwargs:
