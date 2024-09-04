@@ -6,7 +6,7 @@ render: False
 policy_type: tqc+her
 policy_kwargs:
   batch_size: 2048
-  buffer_size: 1000_000
+  buffer_size: 1_000_000
   gamma: 0.95
   learning_rate: 0.001
   policy: MultiInputPolicy
@@ -19,7 +19,7 @@ policy_kwargs:
   tau: 0.05
 
 training_kwargs:
-  n_timesteps: 100_000
+  n_timesteps: 1_000_000
   log_dir: output/tqcher_panda_push_sparse_tf
 
 eval_kwargs:
