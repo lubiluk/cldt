@@ -32,6 +32,7 @@ PandaPush-v3:
   policy_kwargs: 
     net_arch: [512, 512, 512]
     n_critics: 2
+  learning_starts: 1000
 
 
 PandaPickAndPlaceDense-v3:
@@ -49,6 +50,7 @@ PandaPickAndPlaceDense-v3:
   policy_kwargs: 
     net_arch: [512, 512, 512]
     n_critics: 2
+  learning_starts: 1000
 
 PandaPickAndPlace-v3:
   n_timesteps: 1_000_000
@@ -65,6 +67,7 @@ PandaPickAndPlace-v3:
   policy_kwargs: 
     net_arch: [512, 512, 512]
     n_critics: 2
+  learning_starts: 1000
 
 PandaReachDense-v3:
   n_timesteps: 20_000
@@ -81,6 +84,7 @@ PandaReachDense-v3:
   policy_kwargs: 
     net_arch: [512, 512, 512]
     n_critics: 2
+  learning_starts: 1000
 
 PandaReach-v3:
   n_timesteps: 20_000
@@ -97,3 +101,4 @@ PandaReach-v3:
   policy_kwargs: 
     net_arch: [512, 512, 512]
     n_critics: 2
+  learning_starts: 1000
