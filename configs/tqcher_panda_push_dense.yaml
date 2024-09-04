@@ -1,0 +1,26 @@
+env: panda-push-dense
+save_path: trained/tqcher_panda_push_dense_tf
+seed: 1234
+render: False
+
+policy_type: tqc+her
+policy_kwargs:
+  batch_size: 2048
+  buffer_size: 1_000_000
+  gamma: 0.95
+  learning_rate: 0.001
+  policy: MultiInputPolicy
+  policy_kwargs:
+    net_arch: [512, 512, 512]
+    n_critics: 2
+  replay_buffer_kwargs:
+    goal_selection_strategy: future
+    n_sampled_goal: 4
+  tau: 0.05
+
+training_kwargs:
+  n_timesteps: 1_000_000
+  log_dir: output/tqcher_panda_push_dense_tf
+
+eval_kwargs:
+  num_timesteps: 1000
