@@ -17,6 +17,7 @@ python generate.py -t random -p cache/ppo -e hopper -n 1000 -o cache/hopper.pkl 
 
 import argparse
 import pickle
+from os.path import exists
 
 from cldt.envs import setup_env
 from cldt.policy import load_policy
@@ -59,7 +60,12 @@ def generate_dataset(
 
     trajectories = env.numpy_trajectories()
 
-    # Save the dataset
+    if exists(output_path):
+        with open(output_path, "rb") as f:
+            trajectories_old = pickle.load(f)
+        trajectories = trajectories_old + trajectories
+
+    # Save the datasets
     with open(output_path, "wb") as f:
         pickle.dump(trajectories, f)
 

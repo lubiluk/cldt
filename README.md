@@ -34,19 +34,20 @@ python -m experiment.atari --seed 1234 --context-length 30 --epochs 5 --model-ty
 Generate PandaReach dataset. The demonstrator needs time-feature wrapper.
 
 ```bash
-python generate_dataset.py -t reach -e panda-reach-dense -n 100000 -o datasets/panda_reach_dense_100k.pkl -w time-feature
+python generate_dataset.py -t reach -e panda-reach-dense -n 100000 -o datasets/panda_reach_dense_100k_random_expert.pkl -w time-feature
+python generate_dataset.py -t reach -p demonstrators/tqcher_panda_reach_dense_tf.zip -e panda-reach-dense -n 100000 -o datasets/panda_reach_dense_100k_random.pkl -w time-feature
 ```
 
 Generate PandaPush dataset. The demonstrator needs time-feature wrapper.
 
 ```bash
-python generate_dataset.py -t tqc+her -p demonstrators/sb3_tqc_panda_push_sparse.zip -e panda-push-sparse -n 100000 -o datasets/panda_push_sparse_100k.pkl -w time-feature
+python generate_dataset.py -t tqc+her -p demonstrators/sb3_tqc_panda_push_sparse.zip -e panda-push-sparse -n 100000 -o datasets/panda_push_sparse_100k_expert.pkl -w time-feature
 ```
 
 Train Decision-Transformer on PandaReach.
 
 ```bash
-python train_single.py -c configs/dt_panda_reach_dense.yaml  --dataset datasets/panda_reach_dense_100k.pkl 
+python train_single.py -c configs/dt_panda_reach_dense.yaml  --dataset datasets/panda_reach_dense_100k_expert.pkl 
 ```
 
 ---

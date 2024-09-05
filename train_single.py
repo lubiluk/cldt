@@ -15,6 +15,7 @@ from cldt.utils import (
     seed_env,
     seed_libraries,
 )
+from utils import split_dataset
 
 
 def train_single(
@@ -55,6 +56,7 @@ def train_single(
 
     if dataset is not None:
         # Load the dataset
+        dataset = split_dataset(dataset)
         with open(dataset, "rb") as f:
             dataset = pickle.load(f)
 
@@ -109,7 +111,7 @@ if __name__ == "__main__":
         "--dataset",
         type=str,
         required=False,
-        default=None,
+        default='datasets/panda_reach_dense_100k.pkl',
         help="path to the dataset",
     )
     parser.add_argument(
@@ -157,6 +159,7 @@ if __name__ == "__main__":
         "--config",
         type=str,
         required=False,
+        default='configs/dt_panda_reach_dense_tf.yaml',
         help="path to the config file",
     )
     parser.add_argument(
