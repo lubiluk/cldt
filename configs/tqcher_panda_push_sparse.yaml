@@ -1,5 +1,5 @@
 env: panda-push-sparse
-save_path: trained/tqcher_panda_push_sparse_tf
+save_path: trained/tqcher_panda_push_sparse
 seed: 1234
 render: False
 
@@ -20,7 +20,7 @@ policy_kwargs:
 
 training_kwargs:
   n_timesteps: 1_000_000
-  log_dir: output/tqcher_panda_push_sparse_tf
+  log_dir: output/tqcher_panda_push_sparse
 
 eval_kwargs:
   num_timesteps: 10_000
