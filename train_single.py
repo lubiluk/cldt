@@ -7,13 +7,19 @@
 # 6. Function defined here should be usable in hyper-parameter search
 
 import argparse
+import os
+import pathlib
 import pickle
+from datetime import datetime
+
+import yaml
+
 from cldt.envs import setup_env
 from cldt.policy import setup_policy
 from cldt.utils import (
     config_from_args,
     seed_env,
-    seed_libraries,
+    seed_libraries
 )
 
 
@@ -109,7 +115,7 @@ if __name__ == "__main__":
         "--dataset",
         type=str,
         required=False,
-        default=None,
+        default='datasets/panda_reach_dense_100k.pkl',
         help="path to the dataset",
     )
     parser.add_argument(
@@ -157,6 +163,7 @@ if __name__ == "__main__":
         "--config",
         type=str,
         required=False,
+        default='configs/dt_panda_reach_dense_tf.yaml',
         help="path to the config file",
     )
     parser.add_argument(
