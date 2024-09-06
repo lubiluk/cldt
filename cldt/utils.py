@@ -1,7 +1,10 @@
+import argparse
+import pickle
 import random
 import numpy as np
 import torch
 import yaml
+from random import sample
 
 
 def seed_libraries(seed):
@@ -53,3 +56,59 @@ def config_from_args(args):
 
     return config
 
+
+def split_dataset(dataset_path, expert_size_ratio=0.3, number_of_samples=None):
+    expert_dataset_path = dataset_path.replace(".pkl", "_expert.pkl")
+    random_dataset_path = dataset_path.replace(".pkl", "_random.pkl")
+    with open(expert_dataset_path, "rb") as f:
+        expert_dataset = pickle.load(f)
+    with open(random_dataset_path, "rb") as f:
+        random_dataset = pickle.load(f)
+
+    number_of_samples = number_of_samples if number_of_samples is not None else len(expert_dataset)
+    expert_size = int(number_of_samples * expert_size_ratio)
+    random_size = int(number_of_samples * (1 - expert_size_ratio))
+    random_dataset = sample(random_dataset, random_size)
+    expert_dataset = sample(expert_dataset, expert_size)
+    final_dataset = expert_dataset + random_dataset
+
+    random.shuffle(final_dataset)
+
+    final_dataset_path = dataset_path.replace(".pkl", f"{number_of_samples/1000}k_expert_ratio_{expert_size_ratio}.pkl")
+
+    with open(final_dataset_path, "wb") as f:
+        pickle.dump(final_dataset, f)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-d",
+        "--dataset",
+        type=str,
+        required=False,
+        default='datasets/panda_reach_dense_100k.pkl',
+        help="path to the dataset",
+    )
+
+    parser.add_argument(
+        "-d",
+        "--expert_size_ratio",
+        type=float,
+        required=False,
+        default=0.3,
+        help="ratio between expert and random samples",
+    )
+
+    parser.add_argument(
+        "-d",
+        "--number_of_samples",
+        type=float,
+        required=False,
+        default=1000000,
+        help="number of samples which be used in training",
+    )
+
+    args = parser.parse_args()
+
+    split_dataset(args.dataset, args.number_of_samples, args.expert_size_ratio)

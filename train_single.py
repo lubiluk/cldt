@@ -7,15 +7,20 @@
 # 6. Function defined here should be usable in hyper-parameter search
 
 import argparse
+import os
+import pathlib
 import pickle
+from datetime import datetime
+
+import yaml
+
 from cldt.envs import setup_env
 from cldt.policy import setup_policy
 from cldt.utils import (
     config_from_args,
     seed_env,
-    seed_libraries,
+    seed_libraries
 )
-from utils import split_dataset
 
 
 def train_single(
@@ -56,7 +61,6 @@ def train_single(
 
     if dataset is not None:
         # Load the dataset
-        dataset = split_dataset(dataset)
         with open(dataset, "rb") as f:
             dataset = pickle.load(f)
 
