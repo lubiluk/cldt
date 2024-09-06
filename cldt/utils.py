@@ -57,7 +57,7 @@ def config_from_args(args):
     return config
 
 
-def split_dataset(dataset_path, expert_size_ratio=0.3, number_of_samples=None):
+def split_dataset(dataset_path, expert_size_ratio=0.3, number_of_samples=1000000):
     expert_dataset_path = dataset_path.replace(".pkl", "_expert.pkl")
     random_dataset_path = dataset_path.replace(".pkl", "_random.pkl")
     with open(expert_dataset_path, "rb") as f:
@@ -65,26 +65,25 @@ def split_dataset(dataset_path, expert_size_ratio=0.3, number_of_samples=None):
     with open(random_dataset_path, "rb") as f:
         random_dataset = pickle.load(f)
 
-    if len(expert_dataset) != len(random_dataset) and expert_size_ratio not in [0, 1]:
-        number_of_samples = len(expert_dataset) + len(random_dataset)
-        # smaller_dataset = min(len(expert_dataset), len(random_dataset))
-        expert_size_ratio = len(expert_dataset) / number_of_samples
+    expert_size = int(number_of_samples * expert_size_ratio)
+    random_size = int(number_of_samples * (1 - expert_size_ratio))
+    final_expert_dataset = []
+    final_random_dataset = []
 
-    if expert_size_ratio == 1:
-        number_of_samples = len(expert_dataset)
-        expert_size = number_of_samples
-        random_size = 0
-    elif expert_size_ratio == 0:
-        number_of_samples = len(random_dataset)
-        expert_size = 0
-        random_size = number_of_samples
-    else:
-        number_of_samples = number_of_samples if number_of_samples is not None else len(expert_dataset)
-        expert_size = int(number_of_samples * expert_size_ratio)
-        random_size = int(number_of_samples * (1 - expert_size_ratio))
+    i = 0
+    for time_step in expert_dataset:
+        final_expert_dataset.append(time_step)
+        i += len(time_step['observations'])
+        if i >= expert_size:
+            break
 
-    random_dataset = sample(random_dataset, random_size)
-    expert_dataset = sample(expert_dataset, expert_size)
+    i = 0
+    for time_step in random_dataset:
+        final_random_dataset.append(time_step)
+        i += len(time_step['observations'])
+        if i >= random_size:
+            break
+
     final_dataset = expert_dataset + random_dataset
 
     random.shuffle(final_dataset)
@@ -103,7 +102,7 @@ if __name__ == "__main__":
         "--dataset",
         type=str,
         required=False,
-        default='datasets/panda_push_sparse.pkl',
+        default='datasets/panda_push_dense.pkl',
         help="path to the dataset",
     )
 
@@ -119,9 +118,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "-s",
         "--number_of_samples",
-        type=float,
+        type=int,
         required=False,
-        default=None,
+        default=1000000,
         help="number of samples which be used in training",
     )
 
