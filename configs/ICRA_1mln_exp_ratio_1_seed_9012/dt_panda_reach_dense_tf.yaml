@@ -1,9 +1,9 @@
-env: panda-push-dense
+env: panda-reach-dense
 wrappers:
   - step-api-compatibility
   - time-feature
-dataset: datasets/panda_pick_and_place_dense_1000k_expert_ratio_1.pkl
-save_path: trained/panda_pick_and_place_dense_1000k_expert_ratio_1
+dataset: datasets/panda_reach_dense_1000k_expert_ratio_1.pkl
+save_path: trained/panda_reach_dense_1000k_expert_ratio_1
 seed: 9012
 render: False
 
