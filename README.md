@@ -47,7 +47,7 @@ python generate_dataset.py -t tqc+her -p demonstrators/sb3_tqc_panda_push_sparse
 Train Decision-Transformer on PandaReach.
 
 ```bash
-python train_single.py -c configs/dt_panda_reach_dense.yaml  --dataset /net/tscratch/people/plgdomin088/datasets/panda_reach_dense_100k.pkl 
+python train_single.py -c configs/ICRA_1mln_exp_ratio_1_seed_1234/dt_panda_push_dense_tf.yaml  --dataset datasets/split/panda_push_dense_1m_expert.pkl 
 ```
 
 ---

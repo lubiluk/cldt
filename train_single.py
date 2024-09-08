@@ -61,7 +61,7 @@ def train_single(
     policy = setup_policy(policy_type=policy_type, **policy_kwargs)
 
     if dataset is not None:
-        dataset = f'{DATA_PATH} / {dataset}'
+        dataset = f'{DATA_PATH}/{dataset}'
         # Load the dataset
         with open(dataset, "rb") as f:
             dataset = pickle.load(f)
