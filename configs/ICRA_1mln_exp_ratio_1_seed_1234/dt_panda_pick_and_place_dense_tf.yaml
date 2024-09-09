@@ -32,3 +32,4 @@ training_kwargs:
 eval_kwargs:
   goal_return: 0
   num_timesteps: 10000
+  load-path: trained/panda_pick_and_place_dense_1m_expert

@@ -80,7 +80,7 @@ def train_single(
 
     # Save the policy
     if save_path is not None:
-        save_path = f'{DATA_PATH}/{save_path}_seed_{seed}.pt'
+        save_path = f'{DATA_PATH}/{save_path}_seed_{seed}'
         policy.save(path=save_path)
         print(f"Policy saved to {save_path}")
 

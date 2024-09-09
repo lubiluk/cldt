@@ -4,6 +4,7 @@ from statistics import mean
 from cldt.envs import setup_env
 from cldt.policy import load_policy
 from cldt.utils import config_from_args, seed_env, seed_libraries
+from paths import DATA_PATH
 
 
 def evaluate_single(
@@ -21,7 +22,7 @@ def evaluate_single(
 
     # Save for printing
     env_name = env
-
+    load_path = f'{DATA_PATH}/{load_path}_seed_{seed}'
     # Set the seed
     seed_libraries(seed)
     # Create the environment
@@ -99,6 +100,7 @@ if __name__ == "__main__":
         "--config",
         type=str,
         required=False,
+        default='configs/dt_panda_pick_and_place_dense_tf.yaml',
         help="path to the config file",
     )
     args = parser.parse_args()
