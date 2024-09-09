@@ -9,7 +9,7 @@ from paths import DATA_PATH
 
 def evaluate_single(
     policy_type,
-    load_path,
+    save_path,
     seed,
     env,
     wrappers=None,
@@ -22,7 +22,7 @@ def evaluate_single(
 
     # Save for printing
     env_name = env
-    load_path = f'{DATA_PATH}/{load_path}_seed_{seed}'
+    load_path = f'{DATA_PATH}/{save_path}_seed_{seed}'
     # Set the seed
     seed_libraries(seed)
     # Create the environment
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-l",
-        "--load-path",
+        "--save-path",
         type=str,
         required=False,
         default=None,
