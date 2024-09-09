@@ -16,6 +16,8 @@ from transformers import (
     TrainingArguments,
 )
 
+from paths import DATA_PATH
+
 
 @dataclass
 class DecisionTransformerGymDataCollator:
@@ -220,6 +222,7 @@ class DecisionTransformerPolicy(Policy):
         activation_function,
         dropout,
         extractor_type=None,
+        device="cuda",
     ) -> None:
         super().__init__()
         self.return_scale = return_scale
@@ -268,12 +271,12 @@ class DecisionTransformerPolicy(Policy):
                 n_head=self.n_head,
                 activation_function=self.activation_function,
                 resid_pdrop=self.dropout,
-                attn_pdrop=self.dropout,
+                attn_pdrop=self.dropout
             )
             self.model = TrainableDT(config)
 
         training_args = TrainingArguments(
-            output_dir="output/",
+            output_dir=f"{DATA_PATH}/output/",
             remove_unused_columns=False,
             num_train_epochs=num_epochs,
             per_device_train_batch_size=batch_size,
@@ -282,6 +285,7 @@ class DecisionTransformerPolicy(Policy):
             warmup_ratio=warmup_ratio,
             optim=optimizer,
             max_grad_norm=max_grad_norm,
+            save_steps=5000
         )
 
         trainer = Trainer(

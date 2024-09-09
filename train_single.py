@@ -9,6 +9,8 @@
 import argparse
 import pickle
 
+import torch
+
 from cldt.envs import setup_env
 from cldt.policy import setup_policy
 from cldt.utils import (
@@ -108,14 +110,14 @@ if __name__ == "__main__":
         default=None,
         help="additional env wrappers",
     )
-    parser.add_argument(
-        "-d",
-        "--dataset",
-        type=str,
-        required=False,
-        default='datasets/panda_pick_and_place_dense_1m_expert.pkl',
-        help="path to the dataset",
-    )
+    # parser.add_argument(
+    #     "-d",
+    #     "--dataset",
+    #     type=str,
+    #     required=False,
+    #     default='datasets/panda_pick_and_place_dense_1m_expert.pkl',
+    #     help="path to the dataset",
+    # )
 
     parser.add_argument(
         "-t",
@@ -178,5 +180,7 @@ if __name__ == "__main__":
 
     print("Config:")
     print(config)
+
+    print(torch.__version__)
 
     train_single(**config)
