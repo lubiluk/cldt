@@ -2,8 +2,8 @@ env: panda-reach-dense
 wrappers:
   - step-api-compatibility
   - time-feature
-dataset: datasets/panda_reach_dense_1m_random.pkl
-save_path: trained/panda_reach_dense_1m_random
+dataset: datasets/panda_reach_dense_1m_expert.pkl
+save_path: trained/panda_reach_dense_1m_expert
 seed: 1234
 render: False
 
