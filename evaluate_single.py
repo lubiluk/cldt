@@ -102,7 +102,6 @@ if __name__ == "__main__":
         "--config",
         type=str,
         required=False,
-        default='configs/dt_panda_pick_and_place_dense_tf.yaml',
         help="path to the config file",
     )
     args = parser.parse_args()
