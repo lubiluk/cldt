@@ -75,14 +75,14 @@ def split_dataset(dataset_path, expert_size_ratio=0.3, number_of_samples=1000000
         if i >= expert_size:
             break
         final_expert_dataset.append(time_step)
-        i += len(time_step['observations'])
+        i += len(time_step['rewards'])
 
     i = 0
     for time_step in random_dataset:
         if i >= random_size:
             break
         final_random_dataset.append(time_step)
-        i += len(time_step['observations'])
+        i += len(time_step['rewards'])
 
     final_dataset = final_expert_dataset + final_random_dataset
 
