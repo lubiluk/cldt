@@ -7,12 +7,9 @@
 # 6. Function defined here should be usable in hyper-parameter search
 
 import argparse
-import os
-import pathlib
 import pickle
-from datetime import datetime
 
-import yaml
+import torch
 
 from cldt.envs import setup_env
 from cldt.policy import setup_policy
@@ -21,6 +18,7 @@ from cldt.utils import (
     seed_env,
     seed_libraries
 )
+from paths import DATA_PATH
 
 
 def train_single(
@@ -60,6 +58,7 @@ def train_single(
     policy = setup_policy(policy_type=policy_type, **policy_kwargs)
 
     if dataset is not None:
+        dataset = f'{DATA_PATH}/{dataset}'
         # Load the dataset
         with open(dataset, "rb") as f:
             dataset = pickle.load(f)
@@ -81,6 +80,7 @@ def train_single(
 
     # Save the policy
     if save_path is not None:
+        save_path = f'{DATA_PATH}/{save_path}_seed_{seed}'
         policy.save(path=save_path)
         print(f"Policy saved to {save_path}")
 
@@ -110,14 +110,15 @@ if __name__ == "__main__":
         default=None,
         help="additional env wrappers",
     )
-    parser.add_argument(
-        "-d",
-        "--dataset",
-        type=str,
-        required=False,
-        default='datasets/panda_reach_dense_100k.pkl',
-        help="path to the dataset",
-    )
+    # parser.add_argument(
+    #     "-d",
+    #     "--dataset",
+    #     type=str,
+    #     required=False,
+    #     default='datasets/panda_pick_and_place_dense_1m_expert.pkl',
+    #     help="path to the dataset",
+    # )
+
     parser.add_argument(
         "-t",
         "--policy-type",
@@ -163,7 +164,7 @@ if __name__ == "__main__":
         "--config",
         type=str,
         required=False,
-        default='configs/dt_panda_reach_dense_tf.yaml',
+        default='configs/dt_panda_pick_and_place_dense_tf.yaml',
         help="path to the config file",
     )
     parser.add_argument(
@@ -179,5 +180,7 @@ if __name__ == "__main__":
 
     print("Config:")
     print(config)
+
+    print(torch.__version__)
 
     train_single(**config)

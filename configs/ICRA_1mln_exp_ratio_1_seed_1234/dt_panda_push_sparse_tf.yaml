@@ -1,12 +1,10 @@
-env: panda-pick-and-place-dense
+env: panda-push-sparse
 wrappers:
   - step-api-compatibility
   - time-feature
-
+dataset: datasets/panda_push_sparse_1m_expert.pkl
+save_path: trained/panda_push_sparse_1m_expert
 seed: 1234
-dataset: datasets/panda_pick_and_place_dense_1m_expert.pkl
-save_path: trained/panda_pick_and_place_dense_1m_expert
-
 render: False
 
 policy_type: dt

@@ -62,6 +62,7 @@ class Policy(ABC):
         # It is here for now because DecisionTransformerPolicy needs to subclass it
         returns = []
         ep_lens = []
+        successes = []
 
         done = True
 
@@ -81,9 +82,9 @@ class Policy(ABC):
             res = env.step(act)
 
             if len(res) == 4:
-                obs2, rew, done, _ = res
+                obs2, rew, done, info = res
             else:
-                obs2, rew, ter, tru, _ = res
+                obs2, rew, ter, tru, info = res
                 done = ter or tru
 
             ep_ret += rew
@@ -96,8 +97,9 @@ class Policy(ABC):
             if done:
                 returns.append(ep_ret)
                 ep_lens.append(ep_len)
+                successes.append(info.get("is_success", False))
 
-        return returns, ep_lens
+        return returns, ep_lens, successes
 
     @staticmethod
     def load(path, env=None):

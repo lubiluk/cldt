@@ -4,11 +4,12 @@ from statistics import mean
 from cldt.envs import setup_env
 from cldt.policy import load_policy
 from cldt.utils import config_from_args, seed_env, seed_libraries
+from paths import DATA_PATH
 
 
 def evaluate_single(
     policy_type,
-    load_path,
+    save_path,
     seed,
     env,
     wrappers=None,
@@ -21,7 +22,7 @@ def evaluate_single(
 
     # Save for printing
     env_name = env
-
+    load_path = f'{DATA_PATH}/{save_path}_seed_{seed}'
     # Set the seed
     seed_libraries(seed)
     # Create the environment
@@ -34,15 +35,17 @@ def evaluate_single(
 
     # Evaluate the policy
     print(f"Evaluating the policy {policy_type} on {env_name}...")
-    returns, eplen = policy.evaluate(env=env, render=render, **eval_kwargs)
-    score = mean(returns)
-    lens = mean(eplen)
-    print(f"Mean return: {score}")
-    print(f"Mean episode length: {lens}")
+    returns, eplens, successes = policy.evaluate(env=env, render=render, **eval_kwargs)
+    mean_ret = mean(returns)
+    mean_len = mean(eplens)
+    success_rate = mean(successes)
+    print(f"Mean return: {mean_ret}")
+    print(f"Mean episode length: {mean_len}")
+    print(f'Success rate: {success_rate}')
 
     env.close()
 
-    return score
+    return mean_ret
 
 
 if __name__ == "__main__":
@@ -73,7 +76,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-l",
-        "--load-path",
+        "--save-path",
         type=str,
         required=False,
         default=None,
