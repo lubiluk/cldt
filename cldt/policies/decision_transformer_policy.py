@@ -386,7 +386,7 @@ class DecisionTransformerPolicy(Policy):
 
         returns = []
         ep_lens = []
-        success_rate = []
+        successes = []
 
         scale = self.return_scale
         goal_return /= scale
@@ -466,9 +466,9 @@ class DecisionTransformerPolicy(Policy):
             if done:
                 returns.append(episode_return)
                 ep_lens.append(episode_length)
-                success_rate.append(info.get("is_success", False))
+                successes.append(info.get("is_success", False))
 
-        return returns, ep_lens
+        return returns, ep_lens, successes
 
     @staticmethod
     def load(path, env=None):

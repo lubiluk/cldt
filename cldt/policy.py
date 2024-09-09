@@ -62,7 +62,7 @@ class Policy(ABC):
         # It is here for now because DecisionTransformerPolicy needs to subclass it
         returns = []
         ep_lens = []
-        success_rate = []
+        successes = []
 
         done = True
 
@@ -97,9 +97,9 @@ class Policy(ABC):
             if done:
                 returns.append(ep_ret)
                 ep_lens.append(ep_len)
-                success_rate.append(info.get("is_success", False))
+                successes.append(info.get("is_success", False))
 
-        return returns, ep_lens, success_rate
+        return returns, ep_lens, successes
 
     @staticmethod
     def load(path, env=None):

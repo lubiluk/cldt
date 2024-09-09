@@ -35,17 +35,17 @@ def evaluate_single(
 
     # Evaluate the policy
     print(f"Evaluating the policy {policy_type} on {env_name}...")
-    returns, eplen, success_rate = policy.evaluate(env=env, render=render, **eval_kwargs)
-    score = mean(returns)
-    lens = mean(eplen)
-    success_rate = mean(success_rate)
-    print(f"Mean return: {score}")
-    print(f"Mean episode length: {lens}")
+    returns, eplens, successes = policy.evaluate(env=env, render=render, **eval_kwargs)
+    mean_ret = mean(returns)
+    mean_len = mean(eplens)
+    success_rate = mean(successes)
+    print(f"Mean return: {mean_ret}")
+    print(f"Mean episode length: {mean_len}")
     print(f'Success rate: {success_rate}')
 
     env.close()
 
-    return score
+    return mean_ret
 
 
 if __name__ == "__main__":
