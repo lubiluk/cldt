@@ -15,7 +15,7 @@ do
     do
         for ratio in 1_0 0_75 0_5 0_25 0_0
         do 
-            ./spython.sh train_single.py -c configs/dt_panda_${task}_${type}_tf.yaml --dataset panda_${task}_${type}_1m_expert_ratio_${ratio} -save-path panda_${task}_${type}_1m_expert_ratio_${ratio} --seed ${SEED}
+            ./spython.sh train_single.py -c configs/dt_panda_${task}_${type}_tf.yaml --dataset datasets/panda_${task}_${type}_1m_expert_ratio_${ratio}.pkl --save-path trained/dt_panda_${task}_${type}_1m_expert_ratio_${ratio} --seed ${SEED}
         done
     done
 done

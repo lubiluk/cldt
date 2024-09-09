@@ -110,14 +110,14 @@ if __name__ == "__main__":
         default=None,
         help="additional env wrappers",
     )
-    # parser.add_argument(
-    #     "-d",
-    #     "--dataset",
-    #     type=str,
-    #     required=False,
-    #     default='datasets/panda_pick_and_place_dense_1m_expert.pkl',
-    #     help="path to the dataset",
-    # )
+    parser.add_argument(
+        "-d",
+        "--dataset",
+        type=str,
+        required=False,
+        default=None,
+        help="path to the dataset",
+    )
 
     parser.add_argument(
         "-t",
