@@ -1,4 +1,4 @@
-env: panda-push-dense
+env: panda-pick-and-place-dense
 wrappers:
   - step-api-compatibility
   - time-feature

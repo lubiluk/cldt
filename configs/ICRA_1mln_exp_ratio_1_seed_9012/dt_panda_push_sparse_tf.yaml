@@ -4,7 +4,7 @@ wrappers:
   - time-feature
 dataset: datasets/panda_push_sparse_1m_expert.pkl
 save_path: trained/panda_push_sparse_1m_expert
-seed: 9012
+seed: 9102
 render: False
 
 policy_type: dt

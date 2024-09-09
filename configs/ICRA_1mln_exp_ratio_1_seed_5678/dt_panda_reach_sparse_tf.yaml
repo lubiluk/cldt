@@ -1,4 +1,4 @@
-env: panda-reach-dense
+env: panda-reach-sparse
 wrappers:
   - step-api-compatibility
   - time-feature

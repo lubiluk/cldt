@@ -1,4 +1,4 @@
-env: panda-push-sparse
+env: panda-pick-and-place-sparse
 wrappers:
   - step-api-compatibility
   - time-feature

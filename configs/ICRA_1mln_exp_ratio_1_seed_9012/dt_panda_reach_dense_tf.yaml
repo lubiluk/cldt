@@ -4,7 +4,7 @@ wrappers:
   - time-feature
 dataset: datasets/panda_reach_dense_1m_random.pkl
 save_path: trained/panda_reach_dense_1m_random
-seed: 9012
+seed: 9102
 render: False
 
 policy_type: dt

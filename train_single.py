@@ -7,12 +7,7 @@
 # 6. Function defined here should be usable in hyper-parameter search
 
 import argparse
-import os
-import pathlib
 import pickle
-from datetime import datetime
-
-import yaml
 
 from cldt.envs import setup_env
 from cldt.policy import setup_policy
@@ -113,14 +108,15 @@ if __name__ == "__main__":
         default=None,
         help="additional env wrappers",
     )
-    # parser.add_argument(
-    #     "-d",
-    #     "--dataset",
-    #     type=str,
-    #     required=False,
-    #     default='datasets/panda_reach_dense_100k.pkl',
-    #     help="path to the dataset",
-    # )
+    parser.add_argument(
+        "-d",
+        "--dataset",
+        type=str,
+        required=False,
+        default='datasets/panda_pick_and_place_dense_1m_expert.pkl',
+        help="path to the dataset",
+    )
+
     parser.add_argument(
         "-t",
         "--policy-type",
