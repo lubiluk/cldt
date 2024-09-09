@@ -386,6 +386,7 @@ class DecisionTransformerPolicy(Policy):
 
         returns = []
         ep_lens = []
+        success_rate = []
 
         scale = self.return_scale
         goal_return /= scale
@@ -432,7 +433,7 @@ class DecisionTransformerPolicy(Policy):
             actions[-1] = action
             action = action.detach().cpu().numpy()
 
-            state, reward, done, _ = env.step(action)
+            state, reward, done, info = env.step(action)
 
             if self.extractor is not None:
                 state = self.extractor(state)
@@ -456,6 +457,7 @@ class DecisionTransformerPolicy(Policy):
             episode_return += reward
             episode_length += 1
 
+
             t += 1
 
             if max_ep_len and episode_length >= max_ep_len:
@@ -464,6 +466,7 @@ class DecisionTransformerPolicy(Policy):
             if done:
                 returns.append(episode_return)
                 ep_lens.append(episode_length)
+                success_rate.append(info.get("is_success", False))
 
         return returns, ep_lens
 
