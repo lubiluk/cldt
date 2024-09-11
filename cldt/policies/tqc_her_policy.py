@@ -27,15 +27,22 @@ class TqcHerPolicy(Policy):
         self.replay_buffer_kwargs = replay_buffer_kwargs
         self.tau = tau
 
-    def learn_online(self, env, n_timesteps, log_dir=None, device="auto", best_model_save_path=None):
+    def learn_online(
+        self, env, n_timesteps, log_dir=None, device="auto", best_model_save_path=None
+    ):
         if log_dir is not None:
             # Monitor the learning process
             env = Monitor(env, filename=log_dir)
 
         if best_model_save_path is not None:
-            eval_callback = EvalCallback(env, best_model_save_path=best_model_save_path,
-                             log_path=log_dir, eval_freq=500,
-                             deterministic=True, render=False)
+            eval_callback = EvalCallback(
+                env,
+                best_model_save_path=best_model_save_path,
+                log_path=log_dir,
+                eval_freq=500,
+                deterministic=True,
+                render=False,
+            )
         else:
             eval_callback = None
 
@@ -52,10 +59,9 @@ class TqcHerPolicy(Policy):
             tau=self.tau,
             verbose=1,
             device=device,
-            eval_callback=eval_callback,
         )
 
-        self.model.learn(n_timesteps)
+        self.model.learn(n_timesteps, eval_callback=eval_callback)
 
     def act(self, obs):
         return self.model.predict(obs, deterministic=True)[0]
