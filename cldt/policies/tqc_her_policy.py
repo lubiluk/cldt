@@ -61,7 +61,7 @@ class TqcHerPolicy(Policy):
             device=device,
         )
 
-        self.model.learn(n_timesteps, eval_callback=eval_callback)
+        self.model.learn(n_timesteps, callback=eval_callback)
 
     def act(self, obs):
         return self.model.predict(obs, deterministic=True)[0]
