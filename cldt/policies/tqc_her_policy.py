@@ -1,7 +1,8 @@
 from stable_baselines3 import HerReplayBuffer
 from cldt.policy import Policy
 from sb3_contrib import TQC
-from stable_baselines3.common.monitor import Monitor, ResultsWriter
+from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.callbacks import EvalCallback
 
 
 class TqcHerPolicy(Policy):
@@ -26,10 +27,17 @@ class TqcHerPolicy(Policy):
         self.replay_buffer_kwargs = replay_buffer_kwargs
         self.tau = tau
 
-    def learn_online(self, env, n_timesteps, log_dir=None, device="auto"):
+    def learn_online(self, env, n_timesteps, log_dir=None, device="auto", best_model_save_path=None):
         if log_dir is not None:
             # Monitor the learning process
             env = Monitor(env, filename=log_dir)
+
+        if best_model_save_path is not None:
+            eval_callback = EvalCallback(env, best_model_save_path=best_model_save_path,
+                             log_path=log_dir, eval_freq=500,
+                             deterministic=True, render=False)
+        else:
+            eval_callback = None
 
         self.model = TQC(
             policy=self.policy,
@@ -43,7 +51,8 @@ class TqcHerPolicy(Policy):
             policy_kwargs=self.policy_kwargs,
             tau=self.tau,
             verbose=1,
-            device=device
+            device=device,
+            eval_callback=eval_callback,
         )
 
         self.model.learn(n_timesteps)
