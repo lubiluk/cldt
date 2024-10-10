@@ -49,8 +49,10 @@
             "program": "evaluate_single.py",
             "console": "integratedTerminal",
             "args": [
-                "-c", "configs/tqcher_panda_push_sparse.yaml",
-                "-l", "cache/tqc.zip",
+                "-c", "configs/tqcher_panda_pick_and_place_sparse_tf.yaml",
+                "-l", "trained/tqcher_panda_pick_and_place_sparse_tf",
+                "--seed",
+                "5678",
                 "--render"
             ]
         },
