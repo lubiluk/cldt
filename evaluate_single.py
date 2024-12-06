@@ -2,7 +2,7 @@ import argparse
 from statistics import mean
 
 from cldt.envs import setup_env
-from cldt.policy import load_policy
+from cldt.agent import load_agent
 from cldt.utils import config_from_args, seed_env, seed_libraries
 from paths import DATA_PATH
 
@@ -31,7 +31,7 @@ def evaluate_single(
     seed_env(env, seed)
 
     # Setup the policy that we will train
-    policy = load_policy(policy_type=policy_type, load_path=load_path, env=env)
+    policy = load_agent(agent_type=policy_type, load_path=load_path, env=env)
 
     # Evaluate the policy
     print(f"Evaluating the policy {policy_type} on {env_name}...")

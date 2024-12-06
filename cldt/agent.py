@@ -1,47 +1,51 @@
 """
-Functions for loading know policies
+Functions for loading know agents
 """
 
 from abc import ABC, abstractmethod
 
 
-def type_2_class(policy_type):
-    if policy_type == "random":
-        from cldt.policies.random_policy import RandomPolicy
+def type_2_class(agent_type):
+    if agent_type == "random":
+        from cldt.agents.random_policy import RandomPolicy
 
         return RandomPolicy
-    elif policy_type == "dt":
-        from cldt.policies.decision_transformer_policy import DecisionTransformerPolicy
+    elif agent_type == "dt":
+        from cldt.agents.decision_transformer_agent import DecisionTransformerAgent
 
-        return DecisionTransformerPolicy
-    elif policy_type == "reach":
-        from cldt.policies.reach_policy import ReachPolicy
+        return DecisionTransformerAgent
+    elif agent_type == "reach":
+        from cldt.agents.reach_policy import ReachPolicy
 
         return ReachPolicy
-    elif policy_type == "tqc+her":
-        from cldt.policies.tqc_her_policy import TqcHerPolicy
+    elif agent_type == "tqc+her":
+        from cldt.agents.tqc_her_policy import TqcHerPolicy
 
         return TqcHerPolicy
+    elif agent_type == "nanodt":
+        from cldt.agents.nano_dt_agent import NanoDTAgent
+        
+        return NanoDTAgent
     else:
-        raise ValueError(f"Unknown policy type: {policy_type}")
+        raise ValueError(f"Unknown policy type: {agent_type}")
 
 
-def load_policy(policy_type, load_path, env=None):
-    policy_class = type_2_class(policy_type)
+def load_agent(agent_type, load_path, env=None):
+    agent_class = type_2_class(agent_type)
 
     if env is not None:
-        # Some policies from SB3 need env...
-        return policy_class.load(load_path, env)
+        # Some agents from SB3 need env...
+        return agent_class.load(load_path, env)
 
-    return policy_class.load(load_path)
-
-
-def setup_policy(policy_type, **kwargs):
-    policy_class = type_2_class(policy_type)
-    return policy_class(**kwargs)
+    return agent_class.load(load_path)
 
 
-class Policy(ABC):
+def agent_policy(agent_type, **kwargs):
+    agent_class = type_2_class(agent_type)
+    return agent_class(**kwargs)
+
+
+class Agent(ABC):
     def __init__(self) -> None:
         super().__init__()
 

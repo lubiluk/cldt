@@ -12,7 +12,7 @@ import pickle
 import torch
 
 from cldt.envs import setup_env
-from cldt.policy import setup_policy
+from cldt.agent import agent_policy
 from cldt.utils import (
     config_from_args,
     seed_env,
@@ -22,20 +22,20 @@ from paths import DATA_PATH
 
 
 def train_single(
-    policy_type,
+    agent_type,
     seed,
     env=None,
     wrappers=None,
     dataset=None,
     save_path=None,
     render=False,
-    policy_kwargs=None,
+    model_kwargs=None,
     training_kwargs=None,
     eval_kwargs=None,
     log_dir=None,
 ):
-    if policy_kwargs is None:
-        policy_kwargs = {}
+    if model_kwargs is None:
+        model_kwargs = {}
     if training_kwargs is None:
         training_kwargs = {}
     if eval_kwargs is None:
@@ -52,10 +52,10 @@ def train_single(
     # Seed the environment
     seed_env(env, seed)
 
-    print("Policy type:", policy_type)
+    print("Policy type:", agent_type)
 
     # Setup the policy that we will train
-    policy = setup_policy(policy_type=policy_type, **policy_kwargs)
+    policy = agent_policy(agent_type=agent_type, **model_kwargs)
 
     if dataset is not None:
         dataset = f'{DATA_PATH}/{dataset}'

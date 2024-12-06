@@ -1,11 +1,11 @@
 from stable_baselines3 import HerReplayBuffer
-from cldt.policy import Policy
+from cldt.agent import Agent
 from sb3_contrib import TQC
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.callbacks import EvalCallback
 
 
-class TqcHerPolicy(Policy):
+class TqcHerPolicy(Agent):
     def __init__(
         self,
         batch_size,

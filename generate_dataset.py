@@ -20,7 +20,7 @@ import pickle
 from os.path import exists
 
 from cldt.envs import setup_env
-from cldt.policy import load_policy
+from cldt.agent import load_agent
 from cldt.utils import seed_env, seed_libraries
 from cldt.wrappers import TrajectoryRecorder
 
@@ -45,7 +45,7 @@ def generate_dataset(
     seed_env(env, seed)
 
     # Setup the policy that will generate episodes
-    policy = load_policy(policy_type=policy_type, load_path=policy_path, env=env)
+    policy = load_agent(agent_type=policy_type, load_path=policy_path, env=env)
 
     # Initialize the dataset, it's a list of trajectories
     # Each trajectory is a dictionary with keys 'observations',
