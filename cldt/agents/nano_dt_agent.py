@@ -455,14 +455,14 @@ class DecisionTransformerTrainer:
         self,
         model,
         dataset,
-        batch_size,
-        learning_rate,
-        weight_decay,
-        beta1,
-        beta2,
-        max_iters,
-        warmup_iters,
-        device,
+        batch_size = 64,
+        learning_rate = 0.0001,
+        weight_decay = 0.1,
+        beta1 = 0.9,
+        beta2 = 0.999,
+        max_iters = 100_000,
+        warmup_iters = 10_000,
+        device = "cuda",
         decay_lr=False,
         lr_decay_iters=600000,
         min_lr=1e-5,
@@ -784,10 +784,10 @@ class TrajectoryDataset(Dataset):
 class NanoDTAgent:
     def __init__(
         self,
-        n_layer: int = 12,
-        n_head: int = 12,
-        n_embd: int = 768,
-        dropout: float = 0.0,
+        n_layer: int = 3,
+        n_head: int = 1,
+        n_embd: int = 128,
+        dropout: float = 0.1,
         bias: bool = True,
         K: int = 20,
         max_ep_len: int = 1000,
@@ -825,4 +825,5 @@ class NanoDTAgent:
     @staticmethod
     def load(self, path, env=None):
         self.model.load_state_dict(torch.load(path))
+
         return self
