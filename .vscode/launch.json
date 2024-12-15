@@ -65,5 +65,18 @@
                 "--render"
             ]
         },
+        {
+            "name": "Evaluate Single (NDT)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "evaluate_single.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-c", "configs/nanodt_halfcheetah.yaml",
+                "-l", "trained/nanodt_halfcheetah",
+                "--seed", "1234",
+                "--render"
+            ]
+        },
     ]
 }

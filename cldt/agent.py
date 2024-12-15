@@ -62,6 +62,8 @@ class Agent(ABC):
         raise NotImplementedError
 
     def evaluate(self, env, num_timesteps=1000, max_ep_len=None, render=False):
+        """dont use this function, use evaluate_agent instead"""
+
         # TODO: This function is going to be moved outside of Policy class
         # It is here for now because DecisionTransformerPolicy needs to subclass it
         returns = []
@@ -111,3 +113,47 @@ class Agent(ABC):
 
     def save(self, path):
         pass
+
+
+def evaluate_agent(agent, env, num_timesteps=1000, max_ep_len=None, render=False, **kwargs):
+        returns = []
+        ep_lens = []
+        successes = []
+
+        done = True
+
+        for t in range(num_timesteps):
+            if done:
+                agent.reset(**kwargs)
+                obs, _ = env.reset()
+                done = False
+                ep_ret = 0
+                ep_len = 0
+                done = False
+
+            if render:
+                env.render()
+
+            act = self.act(obs)
+
+            res = env.step(act)
+
+            if len(res) == 4:
+                obs2, rew, done, info = res
+            else:
+                obs2, rew, ter, tru, info = res
+                done = ter or tru
+
+            ep_ret += rew
+            ep_len += 1
+            obs = obs2
+
+            if max_ep_len and ep_len >= max_ep_len:
+                done = True
+
+            if done:
+                returns.append(ep_ret)
+                ep_lens.append(ep_len)
+                successes.append(info.get("is_success", False))
+
+        return returns, ep_lens, successes

@@ -161,84 +161,63 @@ class Block(nn.Module):
         return x
 
 
+@dataclass
+class DecisionTransformerConfig:
+    n_layer: int = (3,)
+    n_head: int = (1,)
+    n_embd: int = (128,)
+    dropout: float = (0.1,)
+    bias: bool = (False,)
+    K: int = (20,)
+    max_ep_len: int = (1000,)
+    state_dim: int = (17,)
+    act_dim: int = (6,)
+    act_discrete: bool = (False,)
+    act_vocab_size: int = (1,)
+    act_tanh: bool = (False,)
+    tanh_embeddings: bool = (False,)
+
+
 class DecisionTransformer(nn.Module):
     """This is basically a GPT-2 model with a few tweaks for Decision Transformer"""
 
-    def __init__(
-        self,
-        n_layer: int = 3,
-        n_head: int = 1,
-        n_embd: int = 128,
-        dropout: float = 0.1,
-        bias: bool = False,
-        K: int = 20,
-        max_ep_len: int = 1000,
-        state_dim: int = 17,
-        act_dim: int = 6,
-        act_discrete: bool = False,
-        act_vocab_size: int = 1,
-        act_tanh: bool = False,
-        tanh_embeddings: bool = False,
-    ):
+    def __init__(self, config):
         super().__init__()
-        assert state_dim is not None
-        assert act_dim is not None
-        assert K is not None
-
-        self.args = dict(
-            n_layer=n_layer,
-            n_head=n_head,
-            n_embd=n_embd,
-            K=K,
-            max_ep_len=max_ep_len,
-            bias=bias,
-            dropout=dropout,
-            state_dim=state_dim,
-            act_dim=act_dim,
-            act_discrete=act_discrete,
-            act_vocab_size=act_vocab_size,
-            act_tanh=act_tanh,
-            tanh_embeddings=tanh_embeddings,
-        )
-
-        self.n_layer = n_layer
-        self.n_head = n_head
-        self.n_embd = n_embd
-        self.K = K
-        self.max_ep_len = max_ep_len
-        self.act_discrete = act_discrete
-        self.act_tanh = act_tanh
-        self.tanh_embeddings = tanh_embeddings
-
-        block_size = K * 3  # each block is composed of 3 tokens: R, s, a
-
+        self.config = config
+        block_size = config.K * 3  # each block is composed of 3 tokens: R, s, a
         self.transformer = nn.ModuleDict(
             dict(
-                te=nn.Embedding(max_ep_len, n_embd),
-                re=nn.Linear(1, n_embd),
-                se=nn.Linear(state_dim, n_embd),
+                te=nn.Embedding(config.max_ep_len, config.n_embd),
+                re=nn.Linear(1, config.n_embd),
+                se=nn.Linear(config.state_dim, config.n_embd),
                 ae=(
-                    nn.Embedding(act_vocab_size, n_embd)
-                    if act_discrete
-                    else nn.Linear(act_dim, n_embd)
+                    nn.Embedding(config.act_vocab_size, config.n_embd)
+                    if config.act_discrete
+                    else nn.Linear(config.act_dim, config.n_embd)
                 ),
-                drop=nn.Dropout(dropout),
+                drop=nn.Dropout(config.dropout),
                 h=nn.ModuleList(
                     [
-                        Block(n_embd, n_head, dropout, bias, block_size)
-                        for _ in range(n_layer)
+                        Block(
+                            config.n_embd,
+                            config.n_head,
+                            config.dropout,
+                            config.bias,
+                            block_size,
+                        )
+                        for _ in range(config.n_layer)
                     ]
                 ),
-                ln_f=LayerNorm(n_embd, bias=bias),
-                ln_e=LayerNorm(n_embd, bias=bias),
+                ln_f=LayerNorm(config.n_embd, bias=config.bias),
+                ln_e=LayerNorm(config.n_embd, bias=config.bias),
             )
         )
 
         # TODO: consider bias=False in the act_head as in the original GPT lm_head
-        if act_discrete:
-            self.act_head = nn.Linear(n_embd, act_vocab_size)
+        if config.act_discrete:
+            self.act_head = nn.Linear(config.n_embd, config.act_vocab_size)
         else:
-            self.act_head = nn.Linear(n_embd, act_dim)
+            self.act_head = nn.Linear(config.n_embd, config.act_dim)
 
         # TODO: Let's experiment later if we can use weight tying for DT
         # self.transformer.ae.weight = self.lm_head.weight # https://paperswithcode.com/method/weight-tying
@@ -248,7 +227,9 @@ class DecisionTransformer(nn.Module):
         # apply special scaled init to the residual projections, per GPT-2 paper
         for pn, p in self.named_parameters():
             if pn.endswith("c_proj.weight"):
-                torch.nn.init.normal_(p, mean=0.0, std=0.02 / math.sqrt(2 * n_layer))
+                torch.nn.init.normal_(
+                    p, mean=0.0, std=0.02 / math.sqrt(2 * config.n_layer)
+                )
 
         # report number of parameters
         print("number of parameters: %.2fM" % (self.get_num_params() / 1e6,))
@@ -279,7 +260,7 @@ class DecisionTransformer(nn.Module):
     def forward(self, states, actions, rtgs, tsteps, attn_mask=None, targets=None):
         device = states.device
         b, t = states.shape[0], states.shape[1]
-        assert t <= self.K, f"Cannot forward sequence of length {t}, K is only {self.K}"
+        assert t <= self.config.K, f"Cannot forward sequence of length {t}, K is only {self.config.K}"
         pos = torch.arange(0, t, dtype=torch.long, device=device)  # shape (t)
 
         # forward the GPT model itself
@@ -287,7 +268,7 @@ class DecisionTransformer(nn.Module):
             states
         )  # state embeddings of shape (b, t, n_embd)
         action_emb = self.transformer.ae(
-            actions.type(torch.long).squeeze(-1) if self.act_discrete else actions
+            actions.type(torch.long).squeeze(-1) if self.config.act_discrete else actions
         )  # action embeddings of shape (b, t, n_embd)
         rtg_emb = self.transformer.re(
             rtgs
@@ -296,7 +277,7 @@ class DecisionTransformer(nn.Module):
             tsteps
         )  # time / position embeddings of shape (t, n_embd)
 
-        if self.tanh_embeddings:
+        if self.config.tanh_embeddings:
             state_emb = torch.tanh(state_emb)
             action_emb = torch.tanh(action_emb)
             rtg_emb = torch.tanh(rtg_emb)
@@ -311,7 +292,7 @@ class DecisionTransformer(nn.Module):
         stacked_emb = (
             torch.stack((rtg_emb, state_emb, action_emb), dim=1)
             .permute(0, 2, 1, 3)
-            .reshape(b, 3 * t, self.n_embd)
+            .reshape(b, 3 * t, self.config.n_embd)
         )
         # TODO: Check if this LayerNorm is needed (some implementations don't have it)
         stacked_emb = self.transformer.ln_e(stacked_emb)
@@ -332,7 +313,7 @@ class DecisionTransformer(nn.Module):
             # if we are given some desired targets also calculate the loss
             logits = self.act_head(x)
 
-            if self.act_tanh:
+            if self.config.act_tanh:
                 logits = torch.tanh(logits)
 
             logits = logits[:, 1::3, :]  # only keep predictions from state_embeddings
@@ -341,7 +322,7 @@ class DecisionTransformer(nn.Module):
             # logits = logits.to("cpu")
             # targets = targets.to("cpu")
 
-            if self.act_discrete:
+            if self.config.act_discrete:
                 loss = F.cross_entropy(
                     logits.view(-1, logits.size(-1)), targets.view(-1), ignore_index=-1
                 )
@@ -450,100 +431,51 @@ class DecisionTransformerDataCollator:
         return discount_cumsum
 
 
-class DecisionTransformerTrainer:
-    def __init__(
-        self,
-        model,
-        dataset,
-        batch_size = 64,
-        learning_rate = 0.0001,
-        weight_decay = 0.1,
-        beta1 = 0.9,
-        beta2 = 0.999,
-        max_iters = 100_000,
-        warmup_iters = 10_000,
-        device = "cuda",
-        decay_lr=False,
-        lr_decay_iters=600000,
-        min_lr=1e-5,
-        pct_traj=1.0,
-        reward_scale=1000.0,
-        grad_clip=0.25,
-        gradient_accumulation_steps=1,
-        always_save_checkpoint=False,
-        out_dir="out",
-        eval_only=False,
-        eval_interval=1000,
-        eval_iters=100,
-        log_interval=100,
-    ):
-        self.model = model
-        self.trajectories = dataset
-        self.batch_size = batch_size
-        self.learning_rate = learning_rate
-        self.weight_decay = weight_decay
-        self.beta1 = beta1
-        self.beta2 = beta2
-        self.max_iters = max_iters
-        self.warmup_iters = warmup_iters
-        self.decay_lr = decay_lr
-        self.lr_decay_iters = lr_decay_iters
-        self.min_lr = min_lr
-        self.device = device
-        self.pct_traj = pct_traj
-        self.reward_scale = reward_scale
-        self.grad_clip = grad_clip
-        self.gradient_accumulation_steps = gradient_accumulation_steps
-        self.always_save_checkpoint = always_save_checkpoint
-        self.out_dir = out_dir
-        self.eval_only = eval_only
-        self.eval_interval = eval_interval
-        self.eval_iters = eval_iters
-        self.log_interval = log_interval
+@dataclass
+class DecisionTransformerTrainerConfig:
+    batch_size: int = 64
+    learning_rate: float = 0.0001
+    weight_decay: float = 0.1
+    beta1: float = 0.9
+    beta2: float = 0.999
+    max_iters: int = 100_000
+    warmup_iters: int = 10_000
+    device: str = "cuda"
+    decay_lr: bool = False
+    lr_decay_iters: int = 600000
+    min_lr: float = 1e-5
+    pct_traj: float = 1.0
+    reward_scale: float = 1000.0
+    grad_clip: float = 0.25
+    gradient_accumulation_steps: int = 1
+    always_save_checkpoint: bool = False
+    out_dir: str = "out"
+    eval_only: bool = False
+    eval_interval: int = 1000
+    eval_iters: int = 100
+    log_interval: int = 100
 
-        self.args = dict(
-            model_args=model.args,
-            batch_size=batch_size,
-            learning_rate=learning_rate,
-            weight_decay=weight_decay,
-            beta1=beta1,
-            beta2=beta2,
-            max_iters=max_iters,
-            warmup_iters=warmup_iters,
-            decay_lr=decay_lr,
-            lr_decay_iters=lr_decay_iters,
-            min_lr=min_lr,
-            device=device,
-            pct_traj=pct_traj,
-            reward_scale=reward_scale,
-            grad_clip=grad_clip,
-            gradient_accumulation_steps=gradient_accumulation_steps,
-            always_save_checkpoint=always_save_checkpoint,
-            out_dir=out_dir,
-            eval_only=eval_only,
-            eval_interval=eval_interval,
-            log_interval=log_interval,
-        )
+
+class DecisionTransformerTrainer:
+    def __init__(self, model, dataset, config):
+        self.model = model
+        self.dataset = dataset
+        self.config = config
 
     def train(self):
-        states, traj_lens, returns = [], [], []
-        for path in self.trajectories:
-            states.append(path["observations"])
-            traj_lens.append(len(path["observations"]))
-            returns.append(path["rewards"].sum())
-        traj_lens, returns = np.array(traj_lens), np.array(returns)
+        # Get stats from the dataset
+        traj_lens = self.dataset.traj_lens_
+        returns = self.dataset.returns_
+        state_mean = self.dataset.state_mean_
+        state_std = self.dataset.state_std_
 
-        # used for input normalization
-        states = np.vstack(states)
-        state_mean, state_std = np.mean(states, axis=0), np.std(states, axis=0) + 1e-6
-
+        # TODO: switch whether or not use priority sampling
         num_timesteps = sum(traj_lens)
-
-        num_timesteps = max(int(self.pct_traj * num_timesteps), 1)
+        num_timesteps = max(int(self.config.pct_traj * num_timesteps), 1)
         sorted_inds = np.argsort(returns)  # lowest to highest
         num_trajectories = 1
         timesteps = traj_lens[sorted_inds[-1]]
-        ind = len(self.trajectories) - 2
+        ind = len(self.dataset) - 2
         while ind >= 0 and timesteps + traj_lens[sorted_inds[ind]] <= num_timesteps:
             timesteps += traj_lens[sorted_inds[ind]]
             num_trajectories += 1
@@ -556,35 +488,40 @@ class DecisionTransformerTrainer:
         # TODO: Support resuming from checkpoint
         # optimizer
         optimizer = self.configure_optimizers(
-            self.weight_decay, self.learning_rate, (self.beta1, self.beta2), self.device
+            self.config.weight_decay, self.config.learning_rate, (self.config.beta1, self.config.beta2), self.config.device
         )
 
-        dataset = TrajectoryDataset(self.trajectories)
         collator = DecisionTransformerDataCollator(
             state_mean=state_mean,
             state_std=state_std,
-            K=self.model.K,
-            max_ep_len=self.model.max_ep_len,
-            reward_scale=self.reward_scale,
-            act_discrete=self.model.act_discrete,
+            K=self.model.config.K,
+            max_ep_len=self.model.config.max_ep_len,
+            reward_scale=self.config.reward_scale,
+            act_discrete=self.model.config.act_discrete,
         )
         # WeightedRandomSampler
-        n_samples = self.max_iters * self.batch_size * self.gradient_accumulation_steps
+        n_samples = self.config.max_iters * self.config.batch_size * self.config.gradient_accumulation_steps
+        n_samples *= 2 # TODO: Dirty hack to make it enough for the whole dataset with evaluation
         sampler = WeightedRandomSampler(
             weights=p_sample,
             num_samples=n_samples,  # Sample as many as the dataset size per epoch
             replacement=True,  # Allow replacement for sampling
         )
         dataloader = DataLoader(
-            dataset, batch_size=self.batch_size, collate_fn=collator, sampler=sampler
+            self.dataset,
+            batch_size=self.config.batch_size,
+            collate_fn=collator,
+            sampler=sampler,
+            num_workers=2,  # Use multiple workers
+            # pin_memory=True  # Pin memory for faster transfer to GPU
         )
-        dataloader_iter = iter(dataloader) 
+        dataloader_iter = iter(dataloader)
 
         # init these up here, can override if init_from='resume' (i.e. from a checkpoint)
         iter_num = 0
         best_val_loss = 1e9
 
-        self.model.to(self.device)
+        self.model.to(self.config.device)
 
         # training loop
         states, actions, rewards, rtgs, tsteps, mask = next(
@@ -596,51 +533,51 @@ class DecisionTransformerTrainer:
         running_mfu = -1.0
         while True:
             # determine and set the learning rate for this iteration
-            lr = self.get_lr(iter_num) if self.decay_lr else self.learning_rate
+            lr = self.get_lr(iter_num) if self.config.decay_lr else self.config.learning_rate
             for param_group in optimizer.param_groups:
                 param_group["lr"] = lr
 
             # evaluate the loss on train/val sets and write checkpoints
-            if iter_num % self.eval_interval == 0:
+            if iter_num % self.config.eval_interval == 0:
                 losses = self.estimate_loss(dataloader_iter)
                 print(
                     f"step {iter_num}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}"
                 )
-                if losses["val"] < best_val_loss or self.always_save_checkpoint:
-                    best_val_loss = losses["val"]
-                    if iter_num > 0:
-                        checkpoint = {
-                            "model": raw_model.state_dict(),
-                            "optimizer": optimizer.state_dict(),
-                            "model_args": self.model.args,
-                            "iter_num": iter_num,
-                            "best_val_loss": best_val_loss,
-                            "trainer_args": self.args,
-                        }
-                        print(f"saving checkpoint to {self.out_dir}")
-                        Path(self.out_dir).mkdir(parents=True, exist_ok=True)
-                        torch.save(checkpoint, os.path.join(self.out_dir, "ckpt.pt"))
-            if iter_num == 0 and self.eval_only:
+                # if losses["val"] < best_val_loss or self.config.always_save_checkpoint:
+                #     best_val_loss = losses["val"]
+                #     if iter_num > 0:
+                #         checkpoint = {
+                #             "model": raw_model.state_dict(),
+                #             "optimizer": optimizer.state_dict(),
+                #             "model_args": self.model.args,
+                #             "iter_num": iter_num,
+                #             "best_val_loss": best_val_loss,
+                #             "trainer_args": self.args,
+                #         }
+                #         print(f"saving checkpoint to {self.out_dir}")
+                #         Path(self.out_dir).mkdir(parents=True, exist_ok=True)
+                #         torch.save(checkpoint, os.path.join(self.out_dir, "ckpt.pt"))
+            if iter_num == 0 and self.config.eval_only:
                 break
 
             # forward backward update, with optional gradient accumulation to simulate larger batch size
             # and using the GradScaler if data type is float16
-            for micro_step in range(self.gradient_accumulation_steps):
+            for micro_step in range(self.config.gradient_accumulation_steps):
                 # move to device
                 states, actions, rewards, rtgs, tsteps, mask = (
-                    states.to(self.device),
-                    actions.to(self.device),
-                    rewards.to(self.device),
-                    rtgs.to(self.device),
-                    tsteps.to(self.device),
-                    mask.to(self.device),
+                    states.to(self.config.device),
+                    actions.to(self.config.device),
+                    rewards.to(self.config.device),
+                    rtgs.to(self.config.device),
+                    tsteps.to(self.config.device),
+                    mask.to(self.config.device),
                 )
 
                 logits, loss = self.model(
                     states, actions, rtgs, tsteps, mask, targets=actions
                 )
                 loss = (
-                    loss / self.gradient_accumulation_steps
+                    loss / self.config.gradient_accumulation_steps
                 )  # scale the loss to account for gradient accumulation
                 # immediately async prefetch next batch while model is doing the forward pass on the GPU
                 # I guess this makes sense when ddp is used, but it was removed
@@ -648,8 +585,8 @@ class DecisionTransformerTrainer:
                 # backward pass, with gradient scaling if training in fp16
                 loss.backward()
             # clip the gradient
-            if self.grad_clip != 0.0:
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.grad_clip)
+            if self.config.grad_clip != 0.0:
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.config.grad_clip)
             # step the optimizer and scaler if training in fp16
             optimizer.step()
             # flush the gradients as soon as we can, no need for this memory anymore
@@ -659,13 +596,13 @@ class DecisionTransformerTrainer:
             t1 = time.time()
             dt = t1 - t0
             t0 = t1
-            if iter_num % self.log_interval == 0:
+            if iter_num % self.config.log_interval == 0:
                 # get loss as float. note: this is a CPU-GPU sync point
                 # scale up to undo the division above, approximating the true total loss (exact would have been a sum)
-                lossf = loss.item() * self.gradient_accumulation_steps
+                lossf = loss.item() * self.config.gradient_accumulation_steps
                 if local_iter_num >= 5:  # let the training loop settle a bit
                     mfu = self.estimate_mfu(
-                        self.batch_size * self.gradient_accumulation_steps, dt
+                        self.config.batch_size * self.config.gradient_accumulation_steps, dt
                     )
                     running_mfu = (
                         mfu if running_mfu == -1.0 else 0.9 * running_mfu + 0.1 * mfu
@@ -677,7 +614,7 @@ class DecisionTransformerTrainer:
             local_iter_num += 1
 
             # termination conditions
-            if iter_num > self.max_iters:
+            if iter_num > self.config.max_iters:
                 break
 
     def configure_optimizers(self, weight_decay, learning_rate, betas, device_type):
@@ -718,16 +655,16 @@ class DecisionTransformerTrainer:
         out = {}
         self.model.eval()
         for split in ["train", "val"]:
-            losses = torch.zeros(self.eval_iters)
-            for k in range(self.eval_iters):
+            losses = torch.zeros(self.config.eval_iters)
+            for k in range(self.config.eval_iters):
                 states, actions, rewards, rtgs, tsteps, mask = next(dataloader_iter)
                 states, actions, rewards, rtgs, tsteps, mask = (
-                    states.to(self.device),
-                    actions.to(self.device),
-                    rewards.to(self.device),
-                    rtgs.to(self.device),
-                    tsteps.to(self.device),
-                    mask.to(self.device),
+                    states.to(self.config.device),
+                    actions.to(self.config.device),
+                    rewards.to(self.config.device),
+                    rtgs.to(self.config.device),
+                    tsteps.to(self.config.device),
+                    mask.to(self.config.device),
                 )
                 logits, loss = self.model(
                     states, actions, rtgs, tsteps, mask, targets=actions
@@ -758,7 +695,7 @@ class DecisionTransformerTrainer:
         # first estimate the number of flops we do per iteration.
         # see PaLM paper Appendix B as ref: https://arxiv.org/abs/2204.02311
         N = self.model.get_num_params()
-        cfg = self.model
+        cfg = self.model.config
         L, H, Q, T = cfg.n_layer, cfg.n_head, cfg.n_embd // cfg.n_head, cfg.max_ep_len
         flops_per_token = 6 * N + 12 * L * H * Q * T
         flops_per_fwdbwd = flops_per_token * T
@@ -773,12 +710,28 @@ class DecisionTransformerTrainer:
 class TrajectoryDataset(Dataset):
     def __init__(self, trajectories):
         self.trajectories = trajectories
+        self._calculate_stats()
 
     def __len__(self):
         return len(self.trajectories)
 
     def __getitem__(self, idx):
         return self.trajectories[idx]
+
+    def _calculate_stats(self):
+        states, traj_lens, returns = [], [], []
+        for path in self.trajectories:
+            states.append(path["observations"])
+            traj_lens.append(len(path["observations"]))
+            returns.append(path["rewards"].sum())
+        self.traj_lens_, self.returns_ = np.array(traj_lens), np.array(returns)
+
+        # used for input normalization
+        states = np.vstack(states)
+        self.state_mean_, self.state_std_ = (
+            np.mean(states, axis=0),
+            np.std(states, axis=0) + 1e-6,
+        )
 
 
 class NanoDTAgent:
@@ -798,7 +751,7 @@ class NanoDTAgent:
         act_tanh: bool = False,
         tanh_embeddings: bool = False,
     ):
-        self.model = DecisionTransformer(
+        self.model_config = DecisionTransformerConfig(
             n_layer=n_layer,
             n_head=n_head,
             n_embd=n_embd,
@@ -813,17 +766,206 @@ class NanoDTAgent:
             act_tanh=act_tanh,
             tanh_embeddings=tanh_embeddings,
         )
+        self.model = DecisionTransformer(config=self.model_config)
 
-    def learn_offline(self, dataset, observation_space, action_space, *args, **kwargs):
-        trainer = DecisionTransformerTrainer(self.model, dataset, *args, **kwargs)
+    def learn_offline(self, dataset, observation_space, action_space, **kwargs):
+        # TODO: automatically infer the state_dim and act_dim from the arguments
+        dataset = TrajectoryDataset(trajectories=dataset)
+        self.state_mean_ = dataset.state_mean_
+        self.state_std_ = dataset.state_std_
+        self.reward_scale_ = kwargs.get("reward_scale", 0.0)
+        self.trainer_config = DecisionTransformerTrainerConfig(**kwargs)
+        trainer = DecisionTransformerTrainer(self.model, dataset, config=self.trainer_config)   
         trainer.train()
-        return trainer
 
     def save(self, path):
-        torch.save(self.model.state_dict(), path)
+        """Save the NanoDTAgent to a file"""
+        if not path.endswith(".pth"):
+            path += ".pth"
 
-    @staticmethod
-    def load(self, path, env=None):
-        self.model.load_state_dict(torch.load(path))
+        torch.save(
+            {
+                "model_state_dict": self.model.state_dict(),
+                "model_config": self.model_config,
+                "trainer_config": self.trainer_config,
+                "state_mean": self.state_mean_,
+                "state_std": self.state_std_,
+                "reward_scale": self.reward_scale_,
+            },
+            path,
+        )
 
-        return self
+        # model": raw_model.state_dict(),
+        #                     "optimizer": optimizer.state_dict(),
+        #                     "model_args": self.model.args,
+        #                     "iter_num": iter_num,
+        #                     "best_val_loss": best_val_loss,
+        #                     "trainer_args": self.args,
+
+    @classmethod
+    def load(cls, path, env=None):
+        """Load a NanoDTAgent from a file."""
+
+        if not path.endswith(".pth"):
+            path += ".pth"
+
+        checkpoint = torch.load(path)
+
+        # Extract the saved model configuration
+        model_config = checkpoint["model_config"]
+
+        # Reconstruct the agent object
+        agent = cls(
+            n_layer=model_config.n_layer,
+            n_head=model_config.n_head,
+            n_embd=model_config.n_embd,
+            dropout=model_config.dropout,
+            bias=model_config.bias,
+            K=model_config.K,
+            max_ep_len=model_config.max_ep_len,
+            state_dim=model_config.state_dim,
+            act_dim=model_config.act_dim,
+            act_discrete=model_config.act_discrete,
+            act_vocab_size=model_config.act_vocab_size,
+            act_tanh=model_config.act_tanh,
+            tanh_embeddings=model_config.tanh_embeddings,
+        )
+
+        # Load the model state
+        agent.model.load_state_dict(checkpoint["model_state_dict"])
+
+        # Load additional attributes if available
+        agent.trainer_config = checkpoint.get("trainer_config", None)
+        agent.state_mean_ = checkpoint.get("state_mean", None)
+        agent.state_std_ = checkpoint.get("state_std", None)
+
+        return agent
+
+    def reset(self, target_return):
+        # TODO: allow user to move between devices
+        device = next(self.model.buffers()).device
+        act_dtype = torch.long if self.model_config.act_discrete else torch.float32
+        # we keep all the histories on the device
+        # note that the latest action and reward will be "padding"
+        self._ep_states = torch.zeros((1, self.model_config.state_dim)).to(
+            device=device, dtype=torch.float32
+        )
+        self._ep_actions = torch.zeros(
+            (0, self.model_config.act_dim), device=device, dtype=act_dtype
+        )
+        self._ep_rewards = torch.zeros(0, device=device, dtype=torch.float32)
+        self._ep_rtgs = torch.tensor(
+            target_return, device=device, dtype=torch.float32
+        ).reshape(1, 1)
+        self._ep_tsteps = torch.tensor(0, device=device, dtype=torch.long).reshape(1, 1)
+        self._target_return = target_return
+        self._t = 0
+
+    def act(self, obs, rew=None):
+        device = next(self.model.buffers()).device
+        act_dim = self.model_config.act_dim
+        state_dim = self.model_config.state_dim
+        max_len = self.model_config.K
+        state_mean = self.state_mean_
+        state_std = self.state_std_
+        target_return = self._target_return
+        scale = self.reward_scale_
+        # Update state from the last step
+        self._ep_states = torch.cat(
+            [self._ep_states, torch.from_numpy(obs, device=device)], dim=0
+        )
+        # Update reward if it's not the first step
+        if rew is not None:
+            self._ep_rtgs = torch.cat(
+                [
+                    self._ep_rtgs,
+                    torch.tensor(
+                        target_return - rew / scale, device=device, dtype=torch.float32
+                    ).reshape(1, 1),
+                ],
+                dim=1,
+            )
+            self._ep_rewards[-1] = rew.item()
+
+        # Padding for the next one
+        self._ep_actions = torch.cat(
+            [self._ep_actions, torch.zeros((1, act_dim), device=device)], dim=0
+        )
+        self._ep_rewards = torch.cat([self._ep_rewards, torch.zeros(1, device=device)])
+
+        # prepare the input
+        states = self._ep_states.reshape(1, -1, state_dim)[:, -max_len:]
+        actions = self._ep_actions.reshape(1, -1, act_dim)[:, -max_len:]
+        rtgs = self._ep_rtgs.reshape(1, -1, 1)[:, -max_len:]
+        tsteps = self._ep_tsteps.reshape(1, -1)[:, -max_len:]
+
+        # pad all tokens to sequence length
+        # Calculate masks
+        masks = (
+            torch.cat(
+                [torch.zeros(max_len - states.shape[1]), torch.ones(states.shape[1])],
+                dim=0,
+            )
+            .to(dtype=torch.bool, device=device)
+            .reshape(1, -1)
+        )
+
+        # Pad tensors
+        states = pad_tensor(
+            states, max_len, pad_value=0, device=device, dtype=torch.float32
+        )
+        actions = pad_tensor(
+            actions, max_len, pad_value=-1, device=device, dtype=torch.long
+        )
+        rtgs = pad_tensor(
+            rtgs, max_len, pad_value=0, device=device, dtype=torch.float32
+        )
+        tsteps = pad_tensor(
+            tsteps, max_len, pad_value=0, device=device, dtype=torch.long
+        )
+
+        # get the action
+        with torch.no_grad():
+            logits, _ = self.model(
+                (states.to(dtype=torch.float32) - state_mean) / state_std,
+                actions.to(dtype=torch.float32),
+                rtgs.to(dtype=torch.float32),
+                tsteps.to(dtype=torch.long),
+                masks,
+            )
+
+        if self.model_config.act_discrete:
+            action = torch.argmax(logits[0, -1, :])
+        else:
+            action = logits[0, -1, :]
+
+        ep_tsteps = torch.cat(
+            [
+                ep_tsteps,
+                torch.ones((1, 1), device=device, dtype=torch.long) * (self._t + 1),
+            ],
+            dim=1,
+        )
+
+        return action
+
+
+def pad_tensor(tensor, pad_length, pad_value=0, pad_dim=1, device=None, dtype=None):
+    """
+    Pads a tensor along the specified dimension to the given length.
+
+    Args:
+        tensor (torch.Tensor): The tensor to pad.
+        pad_length (int): The target length after padding.
+        pad_value (float or int): The value to use for padding.
+        pad_dim (int): The dimension to pad (default: 1).
+        device (torch.device): The device to move the tensor to.
+        dtype (torch.dtype): The dtype to cast the tensor to.
+
+    Returns:
+        torch.Tensor: The padded tensor.
+    """
+    pad_shape = list(tensor.shape)
+    pad_shape[pad_dim] = pad_length - tensor.shape[pad_dim]
+    padding = torch.full(pad_shape, pad_value, device=device, dtype=tensor.dtype)
+    return torch.cat([padding, tensor], dim=pad_dim).to(dtype=dtype, device=device)
