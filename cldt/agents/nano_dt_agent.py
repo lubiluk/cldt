@@ -939,9 +939,9 @@ class NanoDTAgent:
         else:
             action = logits[0, -1, :]
 
-        ep_tsteps = torch.cat(
+        self._ep_tsteps = torch.cat(
             [
-                ep_tsteps,
+                self._ep_tsteps,
                 torch.ones((1, 1), device=device, dtype=torch.long) * (self._t + 1),
             ],
             dim=1,

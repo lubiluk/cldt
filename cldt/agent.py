@@ -134,7 +134,7 @@ def evaluate_agent(agent, env, num_timesteps=1000, max_ep_len=None, render=False
             if render:
                 env.render()
 
-            act = self.act(obs)
+            act = agent.act(obs)
 
             res = env.step(act)
 
