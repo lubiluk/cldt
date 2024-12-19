@@ -1,7 +1,7 @@
-from cldt.policy import Policy
+from cldt.agent import Agent
 
 
-class RandomPolicy(Policy):
+class RandomPolicy(Agent):
     action_space = None
 
     """

@@ -1,7 +1,7 @@
-from cldt.policy import Policy
+from cldt.agent import Agent
 
 
-class ReachPolicy(Policy):
+class ReachPolicy(Agent):
     """
     A policy for Reach environment that uses a simple formula to calculate the action.
     """

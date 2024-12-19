@@ -2,13 +2,13 @@ env: panda-reach-dense
 wrappers:
   - step-api-compatibility
   - time-feature
-dataset: datasets/panda_reach_dense_1000k_expert_ratio_1.pkl
-save_path: trained/panda_reach_dense_1000k_expert_ratio_1
+dataset: datasets/panda_reach_dense_1m_expert.pkl
+save_path: trained/dt_panda_reach_dense
 seed: 5678
 render: False
 
-policy_type: dt
-policy_kwargs:
+agent_type: dt
+model_kwargs:
   return_scale: 100.0
   K: 20
   max_ep_len: 100

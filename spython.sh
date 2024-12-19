@@ -3,7 +3,7 @@ sbatch <<EOT
 #!/bin/bash -l
 #SBATCH --job-name=$1
 #SBATCH --time=48:00:00
-#SBATCH --account=plgfactoryrl-gpu-a100
+#SBATCH --account=plgrobot-gpu-a100
 #SBATCH --partition=plgrid-gpu-a100
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=4

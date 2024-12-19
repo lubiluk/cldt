@@ -2,13 +2,13 @@ import argparse
 from statistics import mean
 
 from cldt.envs import setup_env
-from cldt.policy import load_policy
+from cldt.agent import load_agent, evaluate_agent
 from cldt.utils import config_from_args, seed_env, seed_libraries
 from paths import DATA_PATH
 
 
 def evaluate_single(
-    policy_type,
+    agent_type,
     save_path,
     seed,
     env,
@@ -30,12 +30,12 @@ def evaluate_single(
     # Seed the environment
     seed_env(env, seed)
 
-    # Setup the policy that we will train
-    policy = load_policy(policy_type=policy_type, load_path=load_path, env=env)
+    # Setup the agent that we will train
+    agent = load_agent(agent_type=agent_type, load_path=load_path, env=env)
 
-    # Evaluate the policy
-    print(f"Evaluating the policy {policy_type} on {env_name}...")
-    returns, eplens, successes = policy.evaluate(env=env, render=render, **eval_kwargs)
+    # Evaluate the agent
+    print(f"Evaluating the agent {agent_type} on {env_name}...")
+    returns, eplens, successes = evaluate_agent(agent=agent, env=env, render=render, **eval_kwargs)
     mean_ret = mean(returns)
     mean_len = mean(eplens)
     success_rate = mean(successes)
@@ -68,11 +68,11 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-t",
-        "--policy-type",
+        "--agent-type",
         type=str,
         required=False,
         default=None,
-        help="policy type (list of available policies in cldt/policies.py)",
+        help="agent type (list of available agents in cldt/agents.py)",
     )
     parser.add_argument(
         "-l",
@@ -80,7 +80,7 @@ if __name__ == "__main__":
         type=str,
         required=False,
         default=None,
-        help="path to load the policy from",
+        help="path to load the agent from",
     )
     parser.add_argument(
         "-s", "--seed", type=int, default=None, help="seed for the environment"
