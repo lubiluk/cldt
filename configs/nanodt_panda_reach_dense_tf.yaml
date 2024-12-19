@@ -1,0 +1,41 @@
+env: panda-reach-dense
+wrappers:
+  - step-api-compatibility
+  - time-feature
+dataset: datasets/panda_reach_dense_1m_expert.pkl
+save_path: trained/nanodt_panda_reach_dense
+seed: 1234
+render: False
+
+agent_type: nanodt
+model_kwargs:
+  n_layer: 3
+  n_head: 1
+  n_embd: 128
+  dropout: 0.1
+  K: 20
+  state_dim: 9
+  act_dim: 3
+  act_discrete: False
+  max_ep_len: 100
+
+training_kwargs:
+  batch_size: 64
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  beta1: 0.9
+  beta2: 0.999
+  max_iters: 100_000
+  warmup_iters: 10_000
+  lr_decay_iters: 100_000
+  min_lr: 0.000001
+  device: mps
+  pct_traj: 1.0
+  reward_scale: 100.0
+  grad_clip: 0.25
+  always_save_checkpoint: False
+  out_dir: trained/nanodt_panda_reach_dense
+
+eval_kwargs:
+  target_return: 0
+  num_timesteps: 10000

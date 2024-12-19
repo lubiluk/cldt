@@ -48,7 +48,7 @@
             "program": "train_single.py",
             "console": "integratedTerminal",
             "args": [
-                "-c", "configs/nanodt_halfcheetah.yaml",
+                "-c", "configs/nanodt_panda_reach_dense_tf.yaml",
             ]
         },
         {
@@ -75,7 +75,7 @@
                 "-c", "configs/nanodt_halfcheetah.yaml",
                 "-l", "trained/nanodt_halfcheetah",
                 "--seed", "1234",
-                "--render"
+                // "--render"
             ]
         },
     ]
