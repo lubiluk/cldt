@@ -1,7 +1,7 @@
-from cldt.agent import Agent
+from cldt.actor import Actor
 
 
-class ReachPolicy(Agent):
+class ReachActor(Actor):
     """
     A policy for Reach environment that uses a simple formula to calculate the action.
     """
@@ -15,4 +15,4 @@ class ReachPolicy(Agent):
     
     @staticmethod
     def load(load_path, env=None):
-        return ReachPolicy()
+        return ReachActor()

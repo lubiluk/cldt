@@ -1,5 +1,5 @@
 from cldt.envs import setup_env
-from cldt.agent import agent_policy
+from cldt.actor import setup_actor
 from cldt.utils import seed_env, seed_libraries
 
 
@@ -20,7 +20,7 @@ def train_continual(
     for env in envs:
         seed_env(env, seed)
         
-    policy = agent_policy(policy_type, env=envs, device=device)
+    policy = setup_actor(policy_type, env=envs, device=device)
 
     for env_name, dataset_path in zip(env_names, dataset_paths):
         # Train the policy on one task

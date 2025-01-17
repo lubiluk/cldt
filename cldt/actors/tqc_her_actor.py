@@ -1,11 +1,11 @@
 from stable_baselines3 import HerReplayBuffer
-from cldt.agent import Agent
+from cldt.actor import Actor
 from sb3_contrib import TQC
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.callbacks import EvalCallback
 
 
-class TqcHerPolicy(Agent):
+class TqcHerActor(Actor):
     def __init__(
         self,
         batch_size,
@@ -72,7 +72,7 @@ class TqcHerPolicy(Agent):
     @staticmethod
     def load(path, env):
         tqc = TQC.load(path, env=env)
-        policy = TqcHerPolicy(
+        policy = TqcHerActor(
             batch_size=tqc.batch_size,
             buffer_size=tqc.buffer_size,
             gamma=tqc.gamma,

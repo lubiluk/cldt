@@ -23,6 +23,7 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
+import gymnasium.spaces as spaces
 
 
 class LayerNorm(nn.Module):
@@ -734,7 +735,7 @@ class TrajectoryDataset(Dataset):
         )
 
 
-class NanoDTAgent:
+class NanoDTActor:
     def __init__(
         self,
         n_layer: int = 3,
@@ -750,6 +751,7 @@ class NanoDTAgent:
         act_vocab_size: int = 1,
         act_tanh: bool = False,
         tanh_embeddings: bool = False,
+        device="auto",
     ):
         self.model_config = DecisionTransformerConfig(
             n_layer=n_layer,
@@ -766,10 +768,13 @@ class NanoDTAgent:
             act_tanh=act_tanh,
             tanh_embeddings=tanh_embeddings,
         )
-        self.model = DecisionTransformer(config=self.model_config)
 
     def learn_offline(self, dataset, observation_space, action_space, **kwargs):
-        # TODO: automatically infer the state_dim and act_dim from the arguments
+        # Automatically infer the state_dim and act_dim from the arguments
+        self.model_config.state_dim = observation_space.shape[0]
+        self.model_config.act_dim = action_space.shape[0]
+        self.model_config.act_discrete = isinstance(action_space, spaces.Discrete)
+        self.model = DecisionTransformer(config=self.model_config)
         dataset = TrajectoryDataset(trajectories=dataset)
         self.state_mean_ = dataset.state_mean_
         self.state_std_ = dataset.state_std_
@@ -779,13 +784,13 @@ class NanoDTAgent:
         trainer.train()
 
     def save(self, path):
-        """Save the NanoDTAgent to a file"""
+        """Save the NanoDTActor to a file"""
         if not path.endswith(".pth"):
             path += ".pth"
 
         torch.save(
             {
-                "model_state_dict": self.model.state_dict(),
+                "model_state_dict": self.model.to("cpu").state_dict(),
                 "model_config": self.model_config,
                 "trainer_config": self.trainer_config,
                 "state_mean": self.state_mean_,
@@ -803,19 +808,19 @@ class NanoDTAgent:
         #                     "trainer_args": self.args,
 
     @classmethod
-    def load(cls, path, env=None):
-        """Load a NanoDTAgent from a file."""
+    def load(cls, path, env=None, device="cpu"):
+        """Load a NanoDTActor from a file."""
 
         if not path.endswith(".pth"):
             path += ".pth"
 
-        checkpoint = torch.load(path)
+        checkpoint = torch.load(path, map_location="cpu")
 
         # Extract the saved model configuration
         model_config = checkpoint["model_config"]
 
-        # Reconstruct the agent object
-        agent = cls(
+        # Reconstruct the actor object
+        actor = cls(
             n_layer=model_config.n_layer,
             n_head=model_config.n_head,
             n_embd=model_config.n_embd,
@@ -832,14 +837,17 @@ class NanoDTAgent:
         )
 
         # Load the model state
-        agent.model.load_state_dict(checkpoint["model_state_dict"])
+        actor.model = DecisionTransformer(config=model_config)
+        actor.model_config = model_config
+        actor.model.load_state_dict(checkpoint["model_state_dict"])
 
         # Load additional attributes if available
-        agent.trainer_config = checkpoint.get("trainer_config", None)
-        agent.state_mean_ = checkpoint.get("state_mean", None)
-        agent.state_std_ = checkpoint.get("state_std", None)
+        actor.trainer_config = checkpoint.get("trainer_config", None)
+        actor.state_mean_ = checkpoint.get("state_mean", None)
+        actor.state_std_ = checkpoint.get("state_std", None)
+        actor.reward_scale_ = checkpoint.get("reward_scale", None)
 
-        return agent
+        return actor
 
     def reset(self, target_return):
         # TODO: allow user to move between devices
@@ -872,7 +880,7 @@ class NanoDTAgent:
         scale = self.reward_scale_
         # Update state from the last step
         self._ep_states = torch.cat(
-            [self._ep_states, torch.from_numpy(obs, device=device)], dim=0
+            [self._ep_states, torch.from_numpy(obs).reshape(1,-1).to(device)], dim=0
         )
         # Update reward if it's not the first step
         if rew is not None:
@@ -947,7 +955,7 @@ class NanoDTAgent:
             dim=1,
         )
 
-        return action
+        return action.cpu().numpy()
 
 
 def pad_tensor(tensor, pad_length, pad_value=0, pad_dim=1, device=None, dtype=None):

@@ -1,7 +1,7 @@
-from cldt.agent import Agent
+from cldt.actor import Actor
 
 
-class RandomPolicy(Agent):
+class RandomActor(Actor):
     action_space = None
 
     """
@@ -16,7 +16,7 @@ class RandomPolicy(Agent):
 
     @staticmethod
     def load(load_path, env=None):
-        policy = RandomPolicy()
+        policy = RandomActor()
         policy.action_space = env.action_space
 
         return policy

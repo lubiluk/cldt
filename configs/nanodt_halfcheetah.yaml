@@ -2,7 +2,7 @@ env: halfcheetah
 wrappers:
   - step-api-compatibility
 dataset: cache/halfcheetah-medium-v2.pkl
-agent_type: nanodt
+actor_type: nanodt
 save_path: trained/nanodt_halfcheetah
 seed: 1234
 render: False

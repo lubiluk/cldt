@@ -11,28 +11,27 @@ import pickle
 
 import torch
 
+from cldt.datasets import extract_dataset, load_dataset
 from cldt.envs import setup_env
-from cldt.agent import agent_policy
-from cldt.utils import (
-    config_from_args,
-    seed_env,
-    seed_libraries
-)
+from cldt.actor import setup_actor, evaluate_actor
+from cldt.utils import config_from_args, seed_env, seed_libraries
 from paths import DATA_PATH
 
 
 def train_single(
-    agent_type,
+    actor_type,
     seed,
     env=None,
     wrappers=None,
     dataset=None,
+    extractor_type=None,
     save_path=None,
     render=False,
     model_kwargs=None,
     training_kwargs=None,
     eval_kwargs=None,
     log_dir=None,
+    device="auto"
 ):
     if model_kwargs is None:
         model_kwargs = {}
@@ -52,41 +51,46 @@ def train_single(
     # Seed the environment
     seed_env(env, seed)
 
-    print("Policy type:", agent_type)
+    print("Actor type:", actor_type)
 
     # Setup the policy that we will train
-    policy = agent_policy(agent_type=agent_type, **model_kwargs)
+    actor = setup_actor(actor_type=actor_type, **model_kwargs)
 
     if dataset is not None:
-        dataset = f'{DATA_PATH}/{dataset}'
-        # Load the dataset
-        with open(dataset, "rb") as f:
-            dataset = pickle.load(f)
+        dataset = load_dataset(dataset)
+        observation_space = env.observation_space
+
+        if extractor_type is not None:
+            dataset, observation_space = extract_dataset(
+                dataset=dataset,
+                extractor_type=extractor_type,
+                observation_space=env.observation_space,
+            )
 
         # Train the policy
         print(f"Training offline using dataset {dataset_path}...")
-        policy.learn_offline(
+        actor.learn_offline(
             dataset=dataset,
-            observation_space=env.observation_space,
+            observation_space=observation_space,
             action_space=env.action_space,
             **training_kwargs,
         )
     else:
         # Train the policy
         print(f"Training online on {env_name}...")
-        policy.learn_online(env=env, **training_kwargs)
+        actor.learn_online(env=env, **training_kwargs)
 
     print("Training done!")
 
     # Save the policy
     if save_path is not None:
-        save_path = f'{DATA_PATH}/{save_path}_seed_{seed}'
-        policy.save(path=save_path)
+        save_path = f"{DATA_PATH}/{save_path}_seed_{seed}"
+        actor.save(path=save_path)
         print(f"Policy saved to {save_path}")
 
     # Evaluate the policy
     print("Evaluating the policy...")
-    score = policy.evaluate(env=env, render=render, **eval_kwargs)
+    score = evaluate_actor(actor=actor, env=env, render=render, **eval_kwargs)
     print(f"Score: {score}")
 
     env.close()
@@ -106,7 +110,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-w",
         "--wrappers",
-        action='append',
+        action="append",
         default=None,
         help="additional env wrappers",
     )
@@ -118,13 +122,20 @@ if __name__ == "__main__":
         default=None,
         help="path to the dataset",
     )
-
     parser.add_argument(
-        "-t",
-        "--policy-type",
+        "-x",
+        "--extractor-type",
         type=str,
         required=False,
-        help="policy type (list of available policies in cldt/policies.py)",
+        default=None,
+        help="type of the extractor",
+    )
+    parser.add_argument(
+        "-t",
+        "--actor-type",
+        type=str,
+        required=False,
+        help="actor type (list of available policies in cldt/actors.py)",
     )
     parser.add_argument(
         "-s",
@@ -164,7 +175,7 @@ if __name__ == "__main__":
         "--config",
         type=str,
         required=False,
-        default='configs/dt_panda_pick_and_place_dense_tf.yaml',
+        default="configs/dt_panda_pick_and_place_dense_tf.yaml",
         help="path to the config file",
     )
     parser.add_argument(

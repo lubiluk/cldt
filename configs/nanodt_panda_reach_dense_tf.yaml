@@ -1,22 +1,22 @@
+# Base config since most configs differ only in the dataset and save_path
 env: panda-reach-dense
 wrappers:
-  - step-api-compatibility
+  # - step-api-compatibility
   - time-feature
-dataset: datasets/panda_reach_dense_1m_expert.pkl
-save_path: trained/nanodt_panda_reach_dense
+# dataset: datasets/panda_reach_dense_1m_expert.pkl
+# save_path: trained/nanodt_panda_reach_dense
 seed: 1234
 render: False
+extractor_type: dict
+actor_type: nanodt
+device: auto
 
-agent_type: nanodt
 model_kwargs:
   n_layer: 3
   n_head: 1
   n_embd: 128
   dropout: 0.1
   K: 20
-  state_dim: 9
-  act_dim: 3
-  act_discrete: False
   max_ep_len: 100
 
 training_kwargs:
@@ -27,9 +27,7 @@ training_kwargs:
   beta2: 0.999
   max_iters: 100_000
   warmup_iters: 10_000
-  lr_decay_iters: 100_000
-  min_lr: 0.000001
-  device: mps
+  decay_lr: False
   pct_traj: 1.0
   reward_scale: 100.0
   grad_clip: 0.25

@@ -7,7 +7,7 @@ save_path: trained/dt_panda_reach_dense
 seed: 5678
 render: False
 
-agent_type: dt
+actor_type: dt
 model_kwargs:
   return_scale: 100.0
   K: 20

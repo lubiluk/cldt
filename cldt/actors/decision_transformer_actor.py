@@ -7,7 +7,7 @@ import numpy as np
 import torch
 import yaml
 from cldt.extractors import DictExtractor
-from cldt.agent import Agent
+from cldt.actor import Actor
 
 from transformers import (
     DecisionTransformerConfig,
@@ -197,7 +197,7 @@ class TrainableDT(DecisionTransformerModel):
         return super().forward(**kwargs)
 
 
-class DecisionTransformerAgent(Agent):
+class DecisionTransformerActor(Actor):
     model = None
     return_scale = 1000.0
     K = 20
@@ -476,7 +476,7 @@ class DecisionTransformerAgent(Agent):
         # Load the params from the path
         with open(path / "params.yaml", "r") as file:
             params = yaml.safe_load(file)
-        policy = DecisionTransformerAgent(**params)
+        policy = DecisionTransformerActor(**params)
 
         # Load the state_mean
         with open(path / "state_mean.npy", "rb") as f:

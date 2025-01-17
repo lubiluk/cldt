@@ -1,6 +1,7 @@
 from typing import Optional
 
 import gymnasium.spaces as spaces
+import numpy as np
 import torch
 from numpy.typing import NDArray
 
@@ -20,13 +21,14 @@ class DictExtractor:
         self._keys = (
             retained_keys if retained_keys is not None else observation_space.keys()
         )
+        self.observation_space = spaces.flatten_space(observation_space)
 
     def __call__(
         self, observation: dict[str, NDArray], device: Optional[torch.device] = None
     ):
-        tensors = [
-            torch.as_tensor(observation[k], dtype=torch.float32, device=device)
+        arrays = [
+            observation[k]
             for k in self._keys
         ]
 
-        return torch.cat(tensors, dim=-1)
+        return np.concatenate(arrays, axis=-1)

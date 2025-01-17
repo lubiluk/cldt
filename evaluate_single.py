@@ -2,16 +2,18 @@ import argparse
 from statistics import mean
 
 from cldt.envs import setup_env
-from cldt.agent import load_agent, evaluate_agent
+from cldt.actor import load_actor, evaluate_actor
+from cldt.extractors import setup_extractor
 from cldt.utils import config_from_args, seed_env, seed_libraries
 from paths import DATA_PATH
 
 
 def evaluate_single(
-    agent_type,
+    actor_type,
     save_path,
     seed,
     env,
+    extractor_type=None,
     wrappers=None,
     render=False,
     eval_kwargs=None,
@@ -22,7 +24,7 @@ def evaluate_single(
 
     # Save for printing
     env_name = env
-    load_path = f'{DATA_PATH}/{save_path}_seed_{seed}'
+    load_path = f"{DATA_PATH}/{save_path}_seed_{seed}"
     # Set the seed
     seed_libraries(seed)
     # Create the environment
@@ -30,18 +32,25 @@ def evaluate_single(
     # Seed the environment
     seed_env(env, seed)
 
-    # Setup the agent that we will train
-    agent = load_agent(agent_type=agent_type, load_path=load_path, env=env)
+    if extractor_type is not None:
+        extractor = setup_extractor(extractor_type, env.observation_space)
+    else:
+        extractor = None
 
-    # Evaluate the agent
-    print(f"Evaluating the agent {agent_type} on {env_name}...")
-    returns, eplens, successes = evaluate_agent(agent=agent, env=env, render=render, **eval_kwargs)
+    # Setup the actor that we will train
+    actor = load_actor(actor_type=actor_type, load_path=load_path, env=env)
+
+    # Evaluate the actor
+    print(f"Evaluating the actor {actor_type} on {env_name}...")
+    returns, eplens, successes = evaluate_actor(
+        actor=actor, env=env, render=render, extractor=extractor, **eval_kwargs
+    )
     mean_ret = mean(returns)
     mean_len = mean(eplens)
     success_rate = mean(successes)
     print(f"Mean return: {mean_ret}")
     print(f"Mean episode length: {mean_len}")
-    print(f'Success rate: {success_rate}')
+    print(f"Success rate: {success_rate}")
 
     env.close()
 
@@ -68,11 +77,11 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-t",
-        "--agent-type",
+        "--actor-type",
         type=str,
         required=False,
         default=None,
-        help="agent type (list of available agents in cldt/agents.py)",
+        help="actor type (list of available actors in cldt/actors.py)",
     )
     parser.add_argument(
         "-l",
@@ -80,7 +89,7 @@ if __name__ == "__main__":
         type=str,
         required=False,
         default=None,
-        help="path to load the agent from",
+        help="path to load the actor from",
     )
     parser.add_argument(
         "-s", "--seed", type=int, default=None, help="seed for the environment"
