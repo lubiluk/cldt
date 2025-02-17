@@ -31,7 +31,7 @@ def train_single(
     training_kwargs=None,
     eval_kwargs=None,
     log_dir=None,
-    device="auto"
+    device="auto",
 ):
     if model_kwargs is None:
         model_kwargs = {}
@@ -87,15 +87,6 @@ def train_single(
         save_path = f"{DATA_PATH}/{save_path}_seed_{seed}"
         actor.save(path=save_path)
         print(f"Policy saved to {save_path}")
-
-    # Evaluate the policy
-    print("Evaluating the policy...")
-    score = evaluate_actor(actor=actor, env=env, render=render, **eval_kwargs)
-    print(f"Score: {score}")
-
-    env.close()
-
-    return score
 
 
 if __name__ == "__main__":

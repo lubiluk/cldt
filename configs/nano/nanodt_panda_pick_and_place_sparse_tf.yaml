@@ -1,0 +1,40 @@
+env: panda-pick-and-place-sparse
+wrappers:
+  # - step-api-compatibility
+  - time-feature
+
+dataset: datasets/panda_pick_and_place_sparse_1m_expert.pkl
+save_path: trained/nanodt/nanodt_panda_pick_and_place_sparse
+
+seed: 1234
+render: False
+extractor_type: dict
+actor_type: nanodt
+device: mps
+
+model_kwargs:
+  n_layer: 3
+  n_head: 1
+  n_embd: 128
+  dropout: 0.1
+  K: 20
+  max_ep_len: 100
+
+training_kwargs:
+  batch_size: 64
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  beta1: 0.9
+  beta2: 0.999
+  max_iters: 100_000
+  warmup_iters: 10_000
+  decay_lr: False
+  pct_traj: 1.0
+  reward_scale: 100.0
+  grad_clip: 0.25
+  always_save_checkpoint: False
+  out_dir: trained/nanodt/nanodt_panda_pick_and_place_sparse
+
+eval_kwargs:
+  target_return: 0
+  num_timesteps: 10000

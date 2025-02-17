@@ -3,13 +3,14 @@ env: panda-reach-dense
 wrappers:
   # - step-api-compatibility
   - time-feature
-# dataset: datasets/panda_reach_dense_1m_expert.pkl
-# save_path: trained/nanodt_panda_reach_dense
+dataset: datasets/panda_reach_dense_1m_expert.pkl
+save_path: trained/nanodt/nanodt_panda_reach_dense
+
 seed: 1234
 render: False
 extractor_type: dict
 actor_type: nanodt
-device: auto
+device: mps
 
 model_kwargs:
   n_layer: 3
@@ -32,7 +33,7 @@ training_kwargs:
   reward_scale: 100.0
   grad_clip: 0.25
   always_save_checkpoint: False
-  out_dir: trained/nanodt_panda_reach_dense
+  out_dir: trained/nanodt/nanodt_panda_reach_dense
 
 eval_kwargs:
   target_return: 0

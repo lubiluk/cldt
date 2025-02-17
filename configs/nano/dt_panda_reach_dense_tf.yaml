@@ -1,0 +1,34 @@
+env: panda-reach-dense
+wrappers:
+  - step-api-compatibility
+  - time-feature
+dataset: datasets/panda_reach_dense_1m_expert.pkl
+save_path: trained/dt_panda_reach_dense
+seed: 5678
+render: False
+
+actor_type: dt
+model_kwargs:
+  return_scale: 100.0
+  K: 20
+  max_ep_len: 100
+  scale: 100
+  hidden_size: 128
+  n_layer: 3
+  n_head: 1
+  activation_function: relu
+  dropout: 0.1
+  extractor_type: dict
+
+training_kwargs:
+  num_epochs: 120
+  batch_size: 64
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  warmup_ratio: 0.1
+  optimizer: adamw_torch
+  max_grad_norm: 0.25
+
+eval_kwargs:
+  goal_return: 0
+  num_timesteps: 10000
