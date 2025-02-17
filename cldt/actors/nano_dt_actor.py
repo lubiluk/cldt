@@ -768,6 +768,7 @@ class NanoDTActor:
             act_tanh=act_tanh,
             tanh_embeddings=tanh_embeddings,
         )
+        self.device = device
 
     def learn_offline(self, dataset, observation_space, action_space, **kwargs):
         # Automatically infer the state_dim and act_dim from the arguments
@@ -779,7 +780,7 @@ class NanoDTActor:
         self.state_mean_ = dataset.state_mean_
         self.state_std_ = dataset.state_std_
         self.reward_scale_ = kwargs.get("reward_scale", 0.0)
-        self.trainer_config = DecisionTransformerTrainerConfig(**kwargs)
+        self.trainer_config = DecisionTransformerTrainerConfig(device=self.device, **kwargs)
         trainer = DecisionTransformerTrainer(self.model, dataset, config=self.trainer_config)   
         trainer.train()
 
