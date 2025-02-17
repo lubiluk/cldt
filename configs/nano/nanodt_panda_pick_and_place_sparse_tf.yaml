@@ -10,7 +10,7 @@ seed: 1234
 render: False
 extractor_type: dict
 actor_type: nanodt
-device: mps
+device: cuda
 
 model_kwargs:
   n_layer: 3
@@ -28,7 +28,9 @@ training_kwargs:
   beta2: 0.999
   max_iters: 1875000 # 120 epochs
   warmup_iters: 187500 # 10% of max_iters
-  decay_lr: False
+  decay_lr: True
+  lr_decay_iters: 1875000
+  min_lr: 0.00001
   pct_traj: 1.0
   reward_scale: 100.0
   grad_clip: 0.25
