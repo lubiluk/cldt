@@ -48,7 +48,8 @@
             "program": "train_single.py",
             "console": "integratedTerminal",
             "args": [
-                "-c", "configs/nanodt_panda_reach_dense_tf.yaml",
+                "-c", "configs/nano/nanodt_panda_pick_and_place_sparse_tf.yaml",
+                "--device", "mps"
             ]
         },
         {
@@ -76,6 +77,16 @@
                 "-l", "trained/nanodt_panda_reach_dense",
                 "--seed", "1234",
                 "--render"
+            ]
+        },
+        {
+            "name": "Train Single (MGDT)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "train_single.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-c", "configs/nano/mgdt_panda_reach_dense_tf.yaml",
             ]
         },
     ]

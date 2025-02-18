@@ -172,6 +172,8 @@ class DecisionTransformerConfig:
     K: int = (20,)
     max_ep_len: int = (1000,)
     state_dim: int = (17,)
+    dgoal_dim: int = (3,)
+    agoal_dim: int = (3,)
     act_dim: int = (6,)
     act_discrete: bool = (False,)
     act_vocab_size: int = (1,)
@@ -191,6 +193,8 @@ class DecisionTransformer(nn.Module):
                 te=nn.Embedding(config.max_ep_len, config.n_embd),
                 re=nn.Linear(1, config.n_embd),
                 se=nn.Linear(config.state_dim, config.n_embd),
+                dge=nn.Linear(config.dgoal_dim, config.n_embd),
+                age=nn.Linear(config.agoal_dim, config.n_embd),
                 ae=(
                     nn.Embedding(config.act_vocab_size, config.n_embd)
                     if config.act_discrete
@@ -246,6 +250,8 @@ class DecisionTransformer(nn.Module):
         if non_embedding:
             n_params -= self.transformer.te.weight.numel()
             n_params -= self.transformer.se.weight.numel()
+            n_params -= self.transformer.dge.weight.numel()
+            n_params -= self.transformer.age.weight.numel()
             n_params -= self.transformer.ae.weight.numel()
             n_params -= self.transformer.re.weight.numel()
         return n_params
@@ -258,18 +264,28 @@ class DecisionTransformer(nn.Module):
         elif isinstance(module, nn.Embedding):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
-    def forward(self, states, actions, rtgs, tsteps, attn_mask=None, targets=None):
+    def forward(self, states, dgoals, agoals, actions, rtgs, tsteps, attn_mask=None, targets=None):
         device = states.device
         b, t = states.shape[0], states.shape[1]
-        assert t <= self.config.K, f"Cannot forward sequence of length {t}, K is only {self.config.K}"
+        assert (
+            t <= self.config.K
+        ), f"Cannot forward sequence of length {t}, K is only {self.config.K}"
         pos = torch.arange(0, t, dtype=torch.long, device=device)  # shape (t)
 
         # forward the GPT model itself
         state_emb = self.transformer.se(
             states
         )  # state embeddings of shape (b, t, n_embd)
+        dgoal_emb = self.transformer.dge(
+            dgoals
+        ) # desired goal embeddings of shape (b, t, n_embd)
+        agoal_emb = self.transformer.age(
+            agoals
+        ) # achieved goal embeddings of shape (b, t, n_embd)
         action_emb = self.transformer.ae(
-            actions.type(torch.long).squeeze(-1) if self.config.act_discrete else actions
+            actions.type(torch.long).squeeze(-1)
+            if self.config.act_discrete
+            else actions
         )  # action embeddings of shape (b, t, n_embd)
         rtg_emb = self.transformer.re(
             rtgs
@@ -280,11 +296,15 @@ class DecisionTransformer(nn.Module):
 
         if self.config.tanh_embeddings:
             state_emb = torch.tanh(state_emb)
+            dgoal_emb = torch.tanh(dgoal_emb)
+            agoal_emb = torch.tanh(agoal_emb)
             action_emb = torch.tanh(action_emb)
             rtg_emb = torch.tanh(rtg_emb)
 
         # time embeddings are treated similar to positional embeddings
         state_emb = state_emb + tstep_emb
+        dgoal_emb = dgoal_emb + tstep_emb
+        agoal_emb = agoal_emb + tstep_emb
         action_emb = action_emb + tstep_emb
         rtg_emb = rtg_emb + tstep_emb
 
@@ -345,15 +365,23 @@ class DecisionTransformer(nn.Module):
 class DecisionTransformerDataCollator:
     def __init__(
         self,
-        state_mean,
-        state_std,
+        observation_mean,
+        observation_std,
+        desired_goal_mean,
+        desired_goal_std,
+        achieved_goal_mean,
+        achieved_goal_std,
         K=20,
         max_ep_len=1000,
         reward_scale=1000.0,
         act_discrete=False,
     ):
-        self.state_mean = state_mean
-        self.state_std = state_std
+        self.observation_mean = observation_mean
+        self.observation_std = observation_std
+        self.desired_goal_mean = desired_goal_mean
+        self.desired_goal_std = desired_goal_std
+        self.achieved_goal_mean = achieved_goal_mean
+        self.achieved_goal_std = achieved_goal_std
         self.K = K
         self.max_ep_len = max_ep_len
         self.reward_scale = reward_scale
@@ -361,12 +389,18 @@ class DecisionTransformerDataCollator:
 
     def __call__(self, batch):
         max_len = self.K
-        s, a, r, rtg, timesteps, mask = [], [], [], [], [], []
-        state_dim = batch[0]["observations"].shape[-1]
+        s, dg, ag, a, r, rtg, timesteps, mask = [], [], [], [], [], [], [], []
+        state_dim = batch[0]["observations"]["observation"].shape[-1]
+        dgoal_dim = batch[0]["observations"]["desired_goal"].shape[-1]
+        agoal_dim = batch[0]["observations"]["achieved_goal"].shape[-1]
         act_dim = batch[0]["actions"].shape[-1]
         max_ep_len = self.max_ep_len
-        state_mean = self.state_mean
-        state_std = self.state_std
+        state_mean = self.observation_mean
+        state_std = self.observation_std
+        dgoal_mean = self.desired_goal_mean
+        dgoal_std = self.desired_goal_std
+        agoal_mean = self.achieved_goal_mean
+        agoal_std = self.achieved_goal_std
         scale = self.reward_scale
         act_dtype = torch.long if self.act_discrete else torch.float32
 
@@ -374,7 +408,9 @@ class DecisionTransformerDataCollator:
             si = random.randint(0, traj["rewards"].shape[0] - 1)
 
             # get sequences from dataset
-            s.append(traj["observations"][si : si + max_len].reshape(1, -1, state_dim))
+            s.append(traj["observations"]["observation"][si : si + max_len].reshape(1, -1, state_dim))
+            dg.append(traj["observations"]["desired_goal"][si : si + max_len].reshape(1, -1, dgoal_dim))
+            ag.append(traj["observations"]["achieved_goal"][si : si + max_len].reshape(1, -1, agoal_dim))
             a.append(traj["actions"][si : si + max_len].reshape(1, -1, act_dim))
             r.append(traj["rewards"][si : si + max_len].reshape(1, -1, 1))
             timesteps.append(np.arange(si, si + s[-1].shape[1]).reshape(1, -1))
@@ -396,6 +432,14 @@ class DecisionTransformerDataCollator:
                 [np.zeros((1, max_len - tlen, state_dim)), s[-1]], axis=1
             )
             s[-1] = (s[-1] - state_mean) / state_std
+            dg[-1] = np.concatenate(
+                [np.zeros((1, max_len - tlen, dgoal_dim)), dg[-1]], axis=1
+            )
+            dg[-1] = (dg[-1] - dgoal_mean) / dgoal_std
+            ag[-1] = np.concatenate(
+                [np.zeros((1, max_len - tlen, agoal_dim)), ag[-1]], axis=1
+            )
+            ag[-1] = (ag[-1] - agoal_mean) / agoal_std
             a[-1] = np.concatenate(
                 [np.ones((1, max_len - tlen, act_dim)) * -1.0, a[-1]], axis=1
             )
@@ -414,6 +458,8 @@ class DecisionTransformerDataCollator:
             )
 
         s = torch.from_numpy(np.concatenate(s, axis=0)).to(dtype=torch.float32)
+        dg = torch.from_numpy(np.concatenate(dg, axis=0)).to(dtype=torch.float32)
+        ag = torch.from_numpy(np.concatenate(ag, axis=0)).to(dtype=torch.float32)
         a = torch.from_numpy(np.concatenate(a, axis=0)).to(dtype=act_dtype)
         r = torch.from_numpy(np.concatenate(r, axis=0)).to(dtype=torch.float32)
         rtg = torch.from_numpy(np.concatenate(rtg, axis=0)).to(dtype=torch.float32)
@@ -422,7 +468,7 @@ class DecisionTransformerDataCollator:
         )
         mask = torch.from_numpy(np.concatenate(mask, axis=0)).to(dtype=torch.bool)
 
-        return s, a, r, rtg, timesteps, mask
+        return s, dg, ag, a, r, rtg, timesteps, mask
 
     def discount_cumsum(self, x, gamma):
         discount_cumsum = np.zeros_like(x)
@@ -467,8 +513,12 @@ class DecisionTransformerTrainer:
         # Get stats from the dataset
         traj_lens = self.dataset.traj_lens_
         returns = self.dataset.returns_
-        state_mean = self.dataset.state_mean_
-        state_std = self.dataset.state_std_
+        observation_mean = self.dataset.observation_mean_
+        observation_std = self.dataset.observation_std_
+        desired_goal_mean = self.dataset.desired_goal_mean_
+        desired_goal_std = self.dataset.desired_goal_std_
+        achieved_goal_mean = self.dataset.achieved_goal_mean_
+        achieved_goal_std = self.dataset.achieved_goal_std_
 
         # TODO: switch whether or not use priority sampling
         num_timesteps = sum(traj_lens)
@@ -489,20 +539,31 @@ class DecisionTransformerTrainer:
         # TODO: Support resuming from checkpoint
         # optimizer
         optimizer = self.configure_optimizers(
-            self.config.weight_decay, self.config.learning_rate, (self.config.beta1, self.config.beta2), self.config.device
+            self.config.weight_decay,
+            self.config.learning_rate,
+            (self.config.beta1, self.config.beta2),
+            self.config.device,
         )
 
         collator = DecisionTransformerDataCollator(
-            state_mean=state_mean,
-            state_std=state_std,
+            observation_mean=observation_mean,
+            observation_std=observation_std,
+            desired_goal_mean=desired_goal_mean,
+            desired_goal_std=desired_goal_std,
+            achieved_goal_mean=achieved_goal_mean,
+            achieved_goal_std=achieved_goal_std,
             K=self.model.config.K,
             max_ep_len=self.model.config.max_ep_len,
             reward_scale=self.config.reward_scale,
             act_discrete=self.model.config.act_discrete,
         )
         # WeightedRandomSampler
-        n_samples = self.config.max_iters * self.config.batch_size * self.config.gradient_accumulation_steps
-        n_samples *= 2 # TODO: Dirty hack to make it enough for the whole dataset with evaluation
+        n_samples = (
+            self.config.max_iters
+            * self.config.batch_size
+            * self.config.gradient_accumulation_steps
+        )
+        n_samples *= 2  # TODO: Dirty hack to make it enough for the whole dataset with evaluation
         sampler = WeightedRandomSampler(
             weights=p_sample,
             num_samples=n_samples,  # Sample as many as the dataset size per epoch
@@ -525,7 +586,7 @@ class DecisionTransformerTrainer:
         self.model.to(self.config.device)
 
         # training loop
-        states, actions, rewards, rtgs, tsteps, mask = next(
+        states, dgoals, agoals, actions, rewards, rtgs, tsteps, mask = next(
             dataloader_iter
         )  # fetch the very first batch
         t0 = time.time()
@@ -534,7 +595,11 @@ class DecisionTransformerTrainer:
         running_mfu = -1.0
         while True:
             # determine and set the learning rate for this iteration
-            lr = self.get_lr(iter_num) if self.config.decay_lr else self.config.learning_rate
+            lr = (
+                self.get_lr(iter_num)
+                if self.config.decay_lr
+                else self.config.learning_rate
+            )
             for param_group in optimizer.param_groups:
                 param_group["lr"] = lr
 
@@ -565,8 +630,10 @@ class DecisionTransformerTrainer:
             # and using the GradScaler if data type is float16
             for micro_step in range(self.config.gradient_accumulation_steps):
                 # move to device
-                states, actions, rewards, rtgs, tsteps, mask = (
+                states, dgoals, agoals, actions, rewards, rtgs, tsteps, mask = (
                     states.to(self.config.device),
+                    dgoals.to(self.config.device),
+                    agoals.to(self.config.device),
                     actions.to(self.config.device),
                     rewards.to(self.config.device),
                     rtgs.to(self.config.device),
@@ -575,7 +642,7 @@ class DecisionTransformerTrainer:
                 )
 
                 logits, loss = self.model(
-                    states, actions, rtgs, tsteps, mask, targets=actions
+                    states, dgoals, agoals, actions, rtgs, tsteps, mask, targets=actions
                 )
                 loss = (
                     loss / self.config.gradient_accumulation_steps
@@ -587,7 +654,9 @@ class DecisionTransformerTrainer:
                 loss.backward()
             # clip the gradient
             if self.config.grad_clip != 0.0:
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.config.grad_clip)
+                torch.nn.utils.clip_grad_norm_(
+                    self.model.parameters(), self.config.grad_clip
+                )
             # step the optimizer and scaler if training in fp16
             optimizer.step()
             # flush the gradients as soon as we can, no need for this memory anymore
@@ -603,7 +672,9 @@ class DecisionTransformerTrainer:
                 lossf = loss.item() * self.config.gradient_accumulation_steps
                 if local_iter_num >= 5:  # let the training loop settle a bit
                     mfu = self.estimate_mfu(
-                        self.config.batch_size * self.config.gradient_accumulation_steps, dt
+                        self.config.batch_size
+                        * self.config.gradient_accumulation_steps,
+                        dt,
                     )
                     running_mfu = (
                         mfu if running_mfu == -1.0 else 0.9 * running_mfu + 0.1 * mfu
@@ -658,9 +729,11 @@ class DecisionTransformerTrainer:
         for split in ["train", "val"]:
             losses = torch.zeros(self.config.eval_iters)
             for k in range(self.config.eval_iters):
-                states, actions, rewards, rtgs, tsteps, mask = next(dataloader_iter)
+                states, dgoals, agoals, actions, rewards, rtgs, tsteps, mask = next(dataloader_iter)
                 states, actions, rewards, rtgs, tsteps, mask = (
                     states.to(self.config.device),
+                    dgoals.to(self.config.device),
+                    agoals.to(self.config.device),
                     actions.to(self.config.device),
                     rewards.to(self.config.device),
                     rtgs.to(self.config.device),
@@ -668,7 +741,7 @@ class DecisionTransformerTrainer:
                     mask.to(self.config.device),
                 )
                 logits, loss = self.model(
-                    states, actions, rtgs, tsteps, mask, targets=actions
+                    states, dgoals, agoals, actions, rtgs, tsteps, mask, targets=actions
                 )
                 losses[k] = loss.item()
             out[split] = losses.mean()
@@ -720,22 +793,37 @@ class TrajectoryDataset(Dataset):
         return self.trajectories[idx]
 
     def _calculate_stats(self):
-        states, traj_lens, returns = [], [], []
+        obses, dgoals, agoals, traj_lens, returns = [], [], [], [], []
         for path in self.trajectories:
-            states.append(path["observations"])
+            obses.append(path["observations"]["observation"])
+            dgoals.append(path["observations"]["desired_goal"])
+            agoals.append(path["observations"]["achieved_goal"])
             traj_lens.append(len(path["observations"]))
             returns.append(path["rewards"].sum())
         self.traj_lens_, self.returns_ = np.array(traj_lens), np.array(returns)
 
         # used for input normalization
-        states = np.vstack(states)
-        self.state_mean_, self.state_std_ = (
-            np.mean(states, axis=0),
-            np.std(states, axis=0) + 1e-6,
+        obses = np.vstack(obses)
+        dgoals = np.vstack(dgoals)
+        agoals = np.vstack(agoals)
+
+        self.observation_mean_, self.observation_std_ = (
+            np.mean(obses, axis=0),
+            np.std(obses, axis=0) + 1e-6,
+        )
+
+        self.desired_goal_mean_, self.desired_goal_std_ = (
+            np.mean(dgoals, axis=0),
+            np.std(dgoals, axis=0) + 1e-6,
+        )
+
+        self.achieved_goal_mean_, self.achieved_goal_std_ = (
+            np.mean(agoals, axis=0),
+            np.std(agoals, axis=0) + 1e-6,
         )
 
 
-class NanoDTActor:
+class MGDTActor:
     def __init__(
         self,
         n_layer: int = 3,
@@ -761,26 +849,34 @@ class NanoDTActor:
             bias=bias,
             K=K,
             max_ep_len=max_ep_len,
-            state_dim=state_dim,
-            act_dim=act_dim,
-            act_discrete=act_discrete,
-            act_vocab_size=act_vocab_size,
+            state_dim=state_dim, # TODO: remove?
+            act_dim=act_dim, # TODO: remove?
+            act_discrete=act_discrete, # TODO: remove?
+            act_vocab_size=act_vocab_size, # TODO: infer from the dataset?
             act_tanh=act_tanh,
             tanh_embeddings=tanh_embeddings,
         )
 
     def learn_offline(self, dataset, observation_space, action_space, **kwargs):
         # Automatically infer the state_dim and act_dim from the arguments
-        self.model_config.state_dim = observation_space.shape[0]
+        self.model_config.state_dim = observation_space["observation"].shape[0]
+        self.model_config.dgoal_dim = observation_space["desired_goal"].shape[0]
+        self.model_config.agoal_dim = observation_space["achieved_goal"].shape[0]
         self.model_config.act_dim = action_space.shape[0]
         self.model_config.act_discrete = isinstance(action_space, spaces.Discrete)
         self.model = DecisionTransformer(config=self.model_config)
         dataset = TrajectoryDataset(trajectories=dataset)
-        self.state_mean_ = dataset.state_mean_
-        self.state_std_ = dataset.state_std_
+        self.observation_mean_ = dataset.observation_mean_
+        self.observation_std_ = dataset.observation_std_
+        self.desired_goal_mean_ = dataset.desired_goal_mean_
+        self.desired_goal_std_ = dataset.desired_goal_std_
+        self.achieved_goal_mean_ = dataset.achieved_goal_mean_
+        self.achieved_goal_std_ = dataset.achieved_goal_std_
         self.reward_scale_ = kwargs.get("reward_scale", 0.0)
         self.trainer_config = DecisionTransformerTrainerConfig(**kwargs)
-        trainer = DecisionTransformerTrainer(self.model, dataset, config=self.trainer_config)   
+        trainer = DecisionTransformerTrainer(
+            self.model, dataset, config=self.trainer_config
+        )
         trainer.train()
 
     def save(self, path):
@@ -880,7 +976,7 @@ class NanoDTActor:
         scale = self.reward_scale_
         # Update state from the last step
         self._ep_states = torch.cat(
-            [self._ep_states, torch.from_numpy(obs).reshape(1,-1).to(device)], dim=0
+            [self._ep_states, torch.from_numpy(obs).reshape(1, -1).to(device)], dim=0
         )
         # Update reward if it's not the first step
         if rew is not None:

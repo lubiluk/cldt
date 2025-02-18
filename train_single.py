@@ -54,6 +54,7 @@ def train_single(
     print("Actor type:", actor_type)
 
     # Setup the policy that we will train
+    model_kwargs["device"] = device
     actor = setup_actor(actor_type=actor_type, **model_kwargs)
 
     if dataset is not None:
@@ -174,6 +175,13 @@ if __name__ == "__main__":
         type=str,
         required=False,
         help="directory to save logs",
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        required=False,
+        default="auto",
+        help="device to use (cpu, cuda, mps)",
     )
 
     args = parser.parse_args()
