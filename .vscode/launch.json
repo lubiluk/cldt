@@ -89,5 +89,18 @@
                 "-c", "configs/nano/mgdt_panda_reach_dense_tf.yaml",
             ]
         },
+        {
+            "name": "Evaluate Single (MGDT)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "evaluate_single.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-c", "configs/nano/mgdt_panda_reach_dense_tf.yaml",
+                "-l", "trained/mgdt_panda_reach_dense",
+                "--seed", "1234",
+                "--render"
+            ]
+        }
     ]
 }

@@ -187,7 +187,7 @@ class DecisionTransformer(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.config = config
-        block_size = config.K * 3  # each block is composed of 3 tokens: R, s, a
+        block_size = config.K * 5  # each block is composed of 5 tokens: R, s, dg, ag, a
         self.transformer = nn.ModuleDict(
             dict(
                 te=nn.Embedding(config.max_ep_len, config.n_embd),
@@ -311,18 +311,18 @@ class DecisionTransformer(nn.Module):
         # this makes the sequence look like (R_1, s_1, a_1, R_2, s_2, a_2, ...)
         # which works nice in an autoregressive sense since states predict actions
         stacked_emb = (
-            torch.stack((rtg_emb, state_emb, action_emb), dim=1)
+            torch.stack((rtg_emb, state_emb, dgoal_emb, agoal_emb, action_emb), dim=1)
             .permute(0, 2, 1, 3)
-            .reshape(b, 3 * t, self.config.n_embd)
+            .reshape(b, 5 * t, self.config.n_embd)
         )
         # TODO: Check if this LayerNorm is needed (some implementations don't have it)
         stacked_emb = self.transformer.ln_e(stacked_emb)
 
         # to make the attention mask fit the stacked inputs, have to stack it as well
         stacked_attn_mask = (
-            torch.stack((attn_mask, attn_mask, attn_mask), dim=1)
+            torch.stack((attn_mask, attn_mask, attn_mask, attn_mask, attn_mask), dim=1)
             .permute(0, 2, 1)
-            .reshape(b, 3 * t)
+            .reshape(b, 5 * t)
         )
 
         x = self.transformer.drop(stacked_emb)
@@ -337,7 +337,7 @@ class DecisionTransformer(nn.Module):
             if self.config.act_tanh:
                 logits = torch.tanh(logits)
 
-            logits = logits[:, 1::3, :]  # only keep predictions from state_embeddings
+            logits = logits[:, 1::5, :]  # only keep predictions from state_embeddings
 
             # On cpu there are useful asserts
             # logits = logits.to("cpu")
@@ -574,7 +574,7 @@ class DecisionTransformerTrainer:
             batch_size=self.config.batch_size,
             collate_fn=collator,
             sampler=sampler,
-            # num_workers=2,  # Use multiple workers
+            num_workers=2,  # Use multiple workers
             # pin_memory=True  # Pin memory for faster transfer to GPU
         )
         dataloader_iter = iter(dataloader)
@@ -649,7 +649,7 @@ class DecisionTransformerTrainer:
                 )  # scale the loss to account for gradient accumulation
                 # immediately async prefetch next batch while model is doing the forward pass on the GPU
                 # I guess this makes sense when ddp is used, but it was removed
-                states, actions, rewards, rtgs, tsteps, mask = next(dataloader_iter)
+                states, dgoals, agoals, actions, rewards, rtgs, tsteps, mask = next(dataloader_iter)
                 # backward pass, with gradient scaling if training in fp16
                 loss.backward()
             # clip the gradient
@@ -730,7 +730,7 @@ class DecisionTransformerTrainer:
             losses = torch.zeros(self.config.eval_iters)
             for k in range(self.config.eval_iters):
                 states, dgoals, agoals, actions, rewards, rtgs, tsteps, mask = next(dataloader_iter)
-                states, actions, rewards, rtgs, tsteps, mask = (
+                states, dgoals, agoals, actions, rewards, rtgs, tsteps, mask = (
                     states.to(self.config.device),
                     dgoals.to(self.config.device),
                     agoals.to(self.config.device),
@@ -751,18 +751,18 @@ class DecisionTransformerTrainer:
     # learning rate decay scheduler (cosine with warmup)
     def get_lr(self, it):
         # 1) linear warmup for warmup_iters steps
-        if it < self.warmup_iters:
-            return self.learning_rate * it / self.warmup_iters
+        if it < self.config.warmup_iters:
+            return self.config.learning_rate * it / self.config.warmup_iters
         # 2) if it > lr_decay_iters, return min learning rate
-        if it > self.lr_decay_iters:
-            return self.min_lr
+        if it > self.config.lr_decay_iters:
+            return self.config.min_lr
         # 3) in between, use cosine decay down to min learning rate
-        decay_ratio = (it - self.warmup_iters) / (
-            self.lr_decay_iters - self.warmup_iters
+        decay_ratio = (it - self.config.warmup_iters) / (
+            self.config.lr_decay_iters - self.config.warmup_iters
         )
         assert 0 <= decay_ratio <= 1
         coeff = 0.5 * (1.0 + math.cos(math.pi * decay_ratio))  # coeff ranges 0..1
-        return self.min_lr + coeff * (self.learning_rate - self.min_lr)
+        return self.config.min_lr + coeff * (self.config.learning_rate - self.config.min_lr)
 
     def estimate_mfu(self, fwdbwd_per_iter, dt):
         """estimate model flops utilization (MFU) in units of A100 bfloat16 peak FLOPS"""
@@ -889,8 +889,12 @@ class MGDTActor:
                 "model_state_dict": self.model.to("cpu").state_dict(),
                 "model_config": self.model_config,
                 "trainer_config": self.trainer_config,
-                "state_mean": self.state_mean_,
-                "state_std": self.state_std_,
+                "observation_mean_": self.observation_mean_,
+                "observation_std_": self.observation_std_,
+                "desired_goal_mean_": self.desired_goal_mean_,
+                "desired_goal_std_": self.desired_goal_std_,
+                "achieved_goal_mean_": self.achieved_goal_mean_,
+                "achieved_goal_std_": self.achieved_goal_std_,
                 "reward_scale": self.reward_scale_,
             },
             path,
@@ -925,6 +929,8 @@ class MGDTActor:
             K=model_config.K,
             max_ep_len=model_config.max_ep_len,
             state_dim=model_config.state_dim,
+            dgoal_dim=model_config.dgoal_dim,
+            agoal_dim=model_config.agoal_dim,
             act_dim=model_config.act_dim,
             act_discrete=model_config.act_discrete,
             act_vocab_size=model_config.act_vocab_size,

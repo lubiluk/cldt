@@ -513,7 +513,7 @@ class DecisionTransformerTrainer:
             batch_size=self.config.batch_size,
             collate_fn=collator,
             sampler=sampler,
-            # num_workers=2,  # Use multiple workers
+            num_workers=2,  # Use multiple workers
             # pin_memory=True  # Pin memory for faster transfer to GPU
         )
         dataloader_iter = iter(dataloader)
