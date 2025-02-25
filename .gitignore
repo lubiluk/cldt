@@ -5,6 +5,8 @@ output/
 trained/
 datasets/
 logs/
+trained_bkp/
+datasets_bkp/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
