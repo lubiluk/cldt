@@ -78,5 +78,28 @@
                 "--render"
             ]
         },
+        {
+            "name": "Train Single (BC)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "train_single.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-c", "configs/bc_panda_reach_dense_tf.yaml",
+            ]
+        },
+        {
+            "name": "Evaluate Single (BC)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "evaluate_single.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-c", "configs/bc_panda_reach_dense_tf.yaml",
+                "-l", "trained/bc_panda_reach_dense",
+                "--seed", "1234",
+                "--render"
+            ]
+        }
     ]
 }

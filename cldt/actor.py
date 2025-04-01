@@ -26,6 +26,10 @@ def type_2_class(actor_type):
         from cldt.actors.nano_dt_actor import NanoDTActor
 
         return NanoDTActor
+    elif actor_type == "bc":
+        from cldt.actors.bc_actor import BCActor
+
+        return BCActor
     else:
         raise ValueError(f"Unknown policy type: {actor_type}")
 

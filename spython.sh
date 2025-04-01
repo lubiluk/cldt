@@ -12,7 +12,7 @@ sbatch <<EOT
 #SBATCH --gres=gpu
 #SBATCH --output=$SCRATCH/output/slurm-%j.out
 
-conda activate cldt
+source .venv/bin/activate
 python $@
 EOT
 
